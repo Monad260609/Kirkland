@@ -3,7 +3,7 @@ import { checkOnChainCache, hashQuery, storeResultOnChain } from "~~/utils/gatew
 import { detectIntent } from "~~/utils/gateway/detect";
 import { emitEvent } from "~~/utils/gateway/events";
 import { fetchFromSource } from "~~/utils/gateway/fetchers";
-import { paymentRequiredResponse, verifyPayment } from "~~/utils/gateway/x402";
+import { PRICE_CACHE_HIT, PRICE_CACHE_MISS, paymentRequiredResponse, verifyPayment } from "~~/utils/gateway/x402";
 
 export const dynamic = "force-dynamic";
 
@@ -19,18 +19,31 @@ export async function POST(req: NextRequest) {
     // ── Check on-chain cache ──────────────────────────────
     const { isCached, data: cachedData } = await checkOnChainCache(qHash);
 
+    // ── Paiement requis dans tous les cas ─────────────────
+    const paymentTxHash = req.headers.get("X-PAYMENT");
+
+    if (!paymentTxHash) {
+      return NextResponse.json(paymentRequiredResponse(isCached), { status: 402 });
+    }
+
+    // Verifier le paiement avec le bon prix
+    const expectedPrice = isCached ? PRICE_CACHE_HIT : PRICE_CACHE_MISS;
+    const payment = await verifyPayment(paymentTxHash, expectedPrice);
+    if (!payment.ok) {
+      return NextResponse.json({ error: payment.reason }, { status: 402 });
+    }
+
+    const payer = payment.payer;
+
     // ══════════════════════════════════════════════════════
-    //  CACHE HIT — data on-chain, pas expiree
-    //  Gratuit, pas de paiement requis
+    //  CACHE HIT — 0.0001 MON (10x moins cher)
     // ══════════════════════════════════════════════════════
     if (isCached) {
-      const payer = req.headers.get("x-payer") || "0x0000000000000000000000000000000000000000";
-
       emitEvent({
         type: "cache_hit",
         query: input,
         user: payer.slice(0, 6) + "..." + payer.slice(-4),
-        cost: "FREE",
+        cost: `${PRICE_CACHE_HIT} MON`,
         cached: true,
       });
 
@@ -39,32 +52,15 @@ export async function POST(req: NextRequest) {
         intent: intent.type,
         data: JSON.parse(cachedData),
         cached: true,
-        cost: "FREE",
+        cost: `${PRICE_CACHE_HIT} MON`,
         source: "on-chain cache",
         timestamp: Date.now(),
       });
     }
 
     // ══════════════════════════════════════════════════════
-    //  CACHE MISS — paiement en MON requis
-    //  Le client doit envoyer du MON au SERVER_WALLET
-    //  puis inclure le txHash dans le header X-PAYMENT
+    //  CACHE MISS — 0.001 MON (premier a payer)
     // ══════════════════════════════════════════════════════
-
-    const paymentTxHash = req.headers.get("X-PAYMENT");
-
-    if (!paymentTxHash) {
-      return NextResponse.json(paymentRequiredResponse(), { status: 402 });
-    }
-
-    // Verifier le paiement on-chain
-    const payment = await verifyPayment(paymentTxHash);
-    if (!payment.ok) {
-      return NextResponse.json({ error: payment.reason }, { status: 402 });
-    }
-
-    // Paiement OK — fetch + store on-chain
-    const payer = payment.payer;
     const freshData = await fetchFromSource(intent.type, intent.param);
     const txHash = await storeResultOnChain(qHash, input, freshData, payer);
 
@@ -72,7 +68,7 @@ export async function POST(req: NextRequest) {
       type: "query",
       query: input,
       user: payer.slice(0, 6) + "..." + payer.slice(-4),
-      cost: "0.001 MON",
+      cost: `${PRICE_CACHE_MISS} MON`,
       cached: false,
       source: intent.type,
     });
@@ -82,7 +78,7 @@ export async function POST(req: NextRequest) {
       intent: intent.type,
       data: JSON.parse(freshData),
       cached: false,
-      cost: "0.001 MON",
+      cost: `${PRICE_CACHE_MISS} MON`,
       seeder: payer,
       txHash,
       explorerUrl: `https://testnet.monadexplorer.com/tx/${txHash}`,
