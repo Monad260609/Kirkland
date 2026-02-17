@@ -5,7 +5,6 @@ import { parseEther } from "viem";
 import { useAccount, useSendTransaction } from "wagmi";
 
 const SERVER_WALLET = process.env.NEXT_PUBLIC_SERVER_WALLET as `0x${string}`;
-const CACHE_MISS_PRICE = "0.001"; // MON
 
 export interface GatewayResult {
   query: string;
@@ -33,39 +32,35 @@ export function useGatewayQuery() {
     setIsPending(true);
 
     try {
-      // 1. Appel initial — peut retourner la data (cache hit) ou 402
+      if (!address) throw new Error("Connect your wallet first");
+
+      // 1. Appel initial → toujours 402 avec le prix (miss ou hit)
       const res = await fetch("/api/query", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(address ? { "x-payer": address } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
 
-      // Cache HIT — data gratuite
-      if (res.ok) {
-        const data = await res.json();
-        setResult(data);
-        return data as GatewayResult;
-      }
-
-      // Pas un 402 → erreur classique
       if (res.status !== 402) {
         const body = await res.json();
+        if (res.ok) {
+          setResult(body);
+          return body as GatewayResult;
+        }
         throw new Error(body.error || "Query failed");
       }
 
-      // 2. Cache MISS → 402 → envoyer du MON au server wallet
-      if (!address) throw new Error("Connect your wallet first");
+      // 2. 402 → lire le prix (cache hit = 0.0001, cache miss = 0.001)
+      const paymentInfo = await res.json();
+      const price = paymentInfo.cached ? "0.0001" : "0.001";
 
+      // 3. Envoyer le paiement en MON
       const paymentTxHash = await sendTransactionAsync({
         to: SERVER_WALLET,
-        value: parseEther(CACHE_MISS_PRICE),
+        value: parseEther(price),
       });
 
-      // 3. Attendre la confirmation
-      // On poll le receipt directement via fetch pour ne pas dependre d'un hook
+      // 4. Attendre la confirmation sur Monad
       let confirmed = false;
       for (let i = 0; i < 30; i++) {
         await new Promise(r => setTimeout(r, 1000));
@@ -85,13 +80,12 @@ export function useGatewayQuery() {
 
       if (!confirmed) throw new Error("Payment transaction not confirmed");
 
-      // 4. Retry avec le txHash comme preuve de paiement
+      // 5. Retry avec le txHash comme preuve de paiement
       const retryRes = await fetch("/api/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-PAYMENT": paymentTxHash,
-          ...(address ? { "x-payer": address } : {}),
         },
         body: JSON.stringify({ query }),
       });
