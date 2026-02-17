@@ -1,8 +1,8 @@
 import { defineChain } from "viem";
 
-export const monad = defineChain({
-  id: 143,
-  name: "Monad",
+export const monadTestnet = defineChain({
+  id: 10143,
+  name: "Monad Testnet",
   nativeCurrency: {
     name: "MON",
     symbol: "MON",
@@ -10,13 +10,13 @@ export const monad = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc.monad.xyz"],
+      http: ["https://testnet-rpc.monad.xyz"],
     },
   },
   blockExplorers: {
     default: {
-      name: "Monadscan",
-      url: "https://monadscan.com",
+      name: "Monad Explorer",
+      url: "https://testnet.monadexplorer.com",
     },
   },
 });
@@ -35,7 +35,7 @@ export type ScaffoldConfig = BaseConfig;
 export const DEFAULT_ALCHEMY_API_KEY = "cR4WnXePioePZ5fFrnSiR";
 
 const scaffoldConfig = {
-  targetNetworks: [monad],
+  targetNetworks: [monadTestnet],
   pollingInterval: 1000,
   alchemyApiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || DEFAULT_ALCHEMY_API_KEY,
   rpcOverrides: {},
