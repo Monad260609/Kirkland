@@ -4,7 +4,6 @@ import {
   ledgerWallet,
   metaMaskWallet,
   rainbowWallet,
-  safeWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import * as chains from "viem/chains";
@@ -22,19 +21,9 @@ export const wagmiConnectors = () => {
     return [];
   }
 
-  const wallets = [
-    metaMaskWallet,
-    walletConnectWallet,
-    ledgerWallet,
-    baseAccount,
-    rainbowWallet,
-    safeWallet,
-  ];
+  const wallets = [metaMaskWallet, walletConnectWallet, ledgerWallet, baseAccount, rainbowWallet];
 
-  if (
-    !targetNetworks.some(network => network.id !== (chains.hardhat as chains.Chain).id) ||
-    !onlyLocalBurnerWallet
-  ) {
+  if (!targetNetworks.some(network => network.id !== (chains.hardhat as chains.Chain).id) || !onlyLocalBurnerWallet) {
     // Dynamic require to avoid loading burner-connector on the server (it accesses localStorage)
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { rainbowkitBurnerWallet } = require("burner-connector");
