@@ -14,6 +14,7 @@ node_modules
 
 # misc
 .DS_Store
+*.log
 
 # IDE
 .vscode
@@ -21,3 +22,29 @@ node_modules
 
 # cli
 dist
+
+# next.js
+packages/nextjs/.next
+packages/nextjs/out
+packages/nextjs/tsconfig.tsbuildinfo
+
+# foundry
+packages/foundry/cache
+packages/foundry/out
+packages/foundry/broadcast
+packages/foundry/foundry.lock
+
+# env files
+.env
+.env.*
+!.env.example
+
+# claude / AI
+.claude
+
+# mcp
+.mcp.json
+opencode.json
+
+# lock files (keep only yarn.lock)
+pnpm-lock.yaml
