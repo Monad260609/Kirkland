@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import { IconBuildingStore, IconHistory, IconInfoCircle } from "@tabler/icons-react";
 import { AnimatePresence } from "framer-motion";
@@ -73,9 +74,7 @@ const Home: NextPage = () => {
 
       <div className="relative z-10 flex flex-col grow px-6 md:px-12 pt-10 pb-32">
         {/* App Title */}
-        <h1 className="text-center font-[family-name:var(--font-vt323)] text-5xl md:text-6xl text-white tracking-wider mb-10 select-none">
-          Cachemarket
-        </h1>
+        <h1 className="text-center text-6xl md:text-7xl text-white tracking-wider mb-10 select-none">Cachemarket</h1>
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto scrollbar-hide">
@@ -91,9 +90,12 @@ const Home: NextPage = () => {
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="flex items-end justify-center px-6 pb-6 pt-4 pointer-events-auto">
           <FloatingDock items={dockItems} />
-          <p className="absolute right-6 bottom-7 text-white/30 text-sm tracking-wide cursor-pointer hover:text-white/50 transition-colors">
+          <Link
+            href="/about"
+            className="absolute right-6 bottom-5 px-4 py-2 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md text-white/70 text-base tracking-wide cursor-pointer hover:bg-white/15 hover:text-white transition-all"
+          >
             About us
-          </p>
+          </Link>
         </div>
       </div>
     </>

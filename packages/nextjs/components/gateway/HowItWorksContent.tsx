@@ -56,10 +56,10 @@ export function HowItWorksContent() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1, duration: 0.3 }}
-              className="flex flex-col items-center px-3 py-2 rounded-xl bg-white/5 border border-white/10"
+              className="flex flex-col items-center px-4 py-3 rounded-xl bg-white/10 border border-white/15 backdrop-blur-md"
             >
-              <span className="text-white text-xs font-medium">{step.label}</span>
-              <span className="text-white/40 text-[10px] font-mono">{step.sub}</span>
+              <span className="text-white text-base font-semibold">{step.label}</span>
+              <span className="text-white/60 text-sm font-mono">{step.sub}</span>
             </motion.div>
             {idx < FLOW_STEPS.length - 1 && <IconArrowRight className="h-4 w-4 text-white/20 shrink-0" />}
           </React.Fragment>
@@ -74,14 +74,14 @@ export function HowItWorksContent() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 + idx * 0.08, duration: 0.3 }}
-            className="flex gap-4 px-5 py-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm"
+            className="flex gap-4 px-6 py-5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md"
           >
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white/80 shrink-0">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white shrink-0">
               {step.icon}
             </div>
             <div>
-              <h3 className="text-white font-medium text-sm mb-1">{step.title}</h3>
-              <p className="text-white/40 text-xs leading-relaxed">{step.description}</p>
+              <h3 className="text-white font-semibold text-lg mb-1">{step.title}</h3>
+              <p className="text-white/60 text-base leading-relaxed">{step.description}</p>
             </div>
           </motion.div>
         ))}
@@ -94,10 +94,10 @@ export function HowItWorksContent() {
         transition={{ delay: 0.6 }}
         className="mt-6 text-center"
       >
-        <p className="text-white/30 text-xs">
-          Built on <span className="text-white/50 font-medium">Monad Testnet</span> · Powered by{" "}
-          <span className="text-white/50 font-medium">x402 Protocol</span> ·{" "}
-          <span className="text-white/50 font-medium">thirdweb</span> Server Wallets
+        <p className="text-white/50 text-base">
+          Built on <span className="text-white/70 font-medium">Monad Testnet</span> · Powered by{" "}
+          <span className="text-white/70 font-medium">x402 Protocol</span> ·{" "}
+          <span className="text-white/70 font-medium">thirdweb</span> Server Wallets
         </p>
       </motion.div>
     </motion.div>
