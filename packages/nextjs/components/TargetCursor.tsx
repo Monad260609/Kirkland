@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 
 type TargetCursorProps = {
@@ -28,14 +28,16 @@ const TargetCursor = ({
   const tickerFnRef = useRef<gsap.TickerCallback | null>(null);
   const activeStrengthRef = useRef({ current: 0 });
 
-  const isMobile = useMemo(() => {
-    if (typeof window === "undefined") return true;
+  // Start as true (matches server render of null) then check on mount
+  const [isMobile, setIsMobile] = useState(true);
+
+  useEffect(() => {
     const hasTouchScreen = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     const isSmallScreen = window.innerWidth <= 768;
     const userAgent = navigator.userAgent || "";
     const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
     const isMobileUserAgent = mobileRegex.test(userAgent.toLowerCase());
-    return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
+    setIsMobile((hasTouchScreen && isSmallScreen) || isMobileUserAgent);
   }, []);
 
   const constants = useMemo(

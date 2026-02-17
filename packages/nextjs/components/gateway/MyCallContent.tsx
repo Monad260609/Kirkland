@@ -92,8 +92,8 @@ export function MyCallContent() {
         <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
           <IconDatabase className="h-8 w-8 text-white/40" />
         </div>
-        <h3 className="text-white/70 text-lg font-medium mb-2">Connect your wallet</h3>
-        <p className="text-white/40 text-sm">
+        <h3 className="text-white/70 text-xl font-medium mb-2">Connect your wallet</h3>
+        <p className="text-white/40 text-base">
           Connect your wallet to see your previous API calls and their on-chain status.
         </p>
       </motion.div>
@@ -108,13 +108,13 @@ export function MyCallContent() {
       transition={{ duration: 0.3 }}
       className="w-full max-w-3xl mx-auto"
     >
-      <div className="flex items-center gap-3 mb-4 px-2">
-        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-        <span className="text-white/50 text-xs font-mono">
+      <div className="flex items-center gap-3 mb-5 px-3 py-3 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md">
+        <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
+        <span className="text-white/80 text-base font-mono">
           {address?.slice(0, 6)}…{address?.slice(-4)}
         </span>
-        <span className="text-white/30 text-xs">·</span>
-        <span className="text-white/40 text-xs">{MOCK_CALLS.length} calls</span>
+        <span className="text-white/40 text-base">·</span>
+        <span className="text-white/60 text-base">{MOCK_CALLS.length} calls</span>
       </div>
 
       <div className="grid gap-3">
@@ -124,28 +124,28 @@ export function MyCallContent() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.05, duration: 0.3 }}
-            className="flex items-center gap-4 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-target"
+            className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md hover:bg-white/15 transition-all cursor-target"
           >
-            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white/80">
+            <div className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 text-white">
               {call.icon}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-white font-medium text-sm">{call.query}</span>
+                <span className="text-white font-semibold text-lg">{call.query}</span>
                 {call.cached ? (
-                  <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
-                    <IconCheck className="h-3 w-3" />
+                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                    <IconCheck className="h-3.5 w-3.5" />
                     CACHED
                   </span>
                 ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">FRESH</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">FRESH</span>
                 )}
               </div>
-              <p className="text-white/40 text-xs mt-0.5 truncate font-mono">{call.result}</p>
+              <p className="text-white/60 text-base mt-0.5 truncate font-mono">{call.result}</p>
             </div>
             <div className="text-right shrink-0">
-              <div className="text-white/60 text-xs font-mono">{call.cost}</div>
-              <div className="text-white/30 text-[10px]">{timeAgo(call.timestamp)}</div>
+              <div className="text-white/80 text-base font-mono">{call.cost}</div>
+              <div className="text-white/40 text-sm">{timeAgo(call.timestamp)}</div>
             </div>
           </motion.div>
         ))}
