@@ -50,20 +50,31 @@ const DATACACHE_ABI = [
   },
 ] as const;
 
-const account = privateKeyToAccount(process.env.BACKEND_PRIVATE_KEY! as `0x${string}`);
-
 export const publicClient = createPublicClient({
   chain: monadTestnet,
   transport: http(),
 });
 
-export const walletClient = createWalletClient({
-  account,
-  chain: monadTestnet,
-  transport: http(),
-});
+function getAccount() {
+  if (!process.env.BACKEND_PRIVATE_KEY) {
+    throw new Error("BACKEND_PRIVATE_KEY is not set");
+  }
+  return privateKeyToAccount(process.env.BACKEND_PRIVATE_KEY as `0x${string}`);
+}
 
-const cacheAddress = process.env.DATACACHE_ADDRESS! as `0x${string}`;
+function getWalletClient() {
+  return createWalletClient({
+    account: getAccount(),
+    chain: monadTestnet,
+    transport: http(),
+  });
+}
+
+function getCacheAddress(): `0x${string}` {
+  const addr = process.env.DATACACHE_ADDRESS;
+  if (!addr) throw new Error("DATACACHE_ADDRESS is not set");
+  return addr as `0x${string}`;
+}
 
 export function hashQuery(query: string): `0x${string}` {
   return keccak256(toHex(query.toLowerCase().trim()));
@@ -71,7 +82,7 @@ export function hashQuery(query: string): `0x${string}` {
 
 export async function checkOnChainCache(queryHash: `0x${string}`) {
   const result = await publicClient.readContract({
-    address: cacheAddress,
+    address: getCacheAddress(),
     abi: DATACACHE_ABI,
     functionName: "checkCache",
     args: [queryHash],
@@ -80,8 +91,8 @@ export async function checkOnChainCache(queryHash: `0x${string}`) {
 }
 
 export async function storeResultOnChain(queryHash: `0x${string}`, query: string, data: string, seeder: string) {
-  const txHash = await walletClient.writeContract({
-    address: cacheAddress,
+  const txHash = await getWalletClient().writeContract({
+    address: getCacheAddress(),
     abi: DATACACHE_ABI,
     functionName: "storeResult",
     args: [queryHash, query, data, seeder as `0x${string}`],
@@ -91,7 +102,7 @@ export async function storeResultOnChain(queryHash: `0x${string}`, query: string
 
 export async function getOnChainStats() {
   const result = await publicClient.readContract({
-    address: cacheAddress,
+    address: getCacheAddress(),
     abi: DATACACHE_ABI,
     functionName: "getStats",
   });

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getOnChainStats } from "~~/utils/gateway/chain";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const stats = await getOnChainStats();
