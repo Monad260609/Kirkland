@@ -1,43 +1,43 @@
-# 🌐 x402 Universal Access Point — Roadmap Hackathon Monad Blitz
+# x402 Universal Access Point — Roadmap Hackathon Monad Blitz
 
-> Un wrapper API où la fraîcheur de la donnée a un prix.
-> Tu veux la data en premier ? Tu paies cher. Tu arrives après ? C'est quasi gratuit.
-> Un CDN de données payant où le premier finance le cache pour tout le réseau.
+> Un wrapper API ou la fraicheur de la donnee a un prix.
+> Tu veux la data en premier ? Tu paies cher. Tu arrives apres ? C'est quasi gratuit.
+> Un CDN de donnees payant ou le premier finance le cache pour tout le reseau.
 
 ---
 
-## 🧠 Le Concept en 30 Secondes
+## Le Concept en 30 Secondes
 
 ```
 10h00:00 — Agent A query "ETH price"
-           → Donnée pas dans le contrat
-           → PAYE CHER ($0.01) ← prix de la fraîcheur
+           → Donnee pas dans le contrat
+           → PAYE CHER ($0.01) ← prix de la fraicheur
            → Backend fetch CoinGecko → "2847.32"
-           → Résultat ÉCRIT ON-CHAIN
-           → Agent A reçoit la data en premier
+           → Resultat ECRIT ON-CHAIN
+           → Agent A recoit la data en premier
 
 10h00:05 — Agent B query "ETH price"
-           → Donnée EXISTE dans le contrat
+           → Donnee EXISTE dans le contrat
            → PAYE PEU ($0.0001) ← juste du gas
            → Lecture directe du contrat
            → Pas besoin d'appeler CoinGecko
 
-10h01:00 — TTL expiré (60s)
-           → Donnée marquée comme périmée
-           → Le prochain paye à nouveau le prix fort
+10h01:00 — TTL expire (60s)
+           → Donnee marquee comme perimee
+           → Le prochain paye a nouveau le prix fort
            → Nouveau cycle
 ```
 
-**C'est un marché de la fraîcheur** : les bots de trading paient cher pour être premiers, les dashboards paient rien parce que quelqu'un a déjà payé.
+**C'est un marche de la fraicheur** : les bots de trading paient cher pour etre premiers, les dashboards paient rien parce que quelqu'un a deja paye.
 
 ---
 
-## 📐 Architecture
+## Architecture
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌─────────────────────┐
 │   CLI        │     │  Dashboard   │     │   Agent Scripts      │
-│   x402q      │     │  React Web   │     │   (query en boucle)  │
+│   x402q      │     │  Next.js     │     │   (query en boucle)  │
 └──────┬───────┘     └──────┬───────┘     └──────────┬───────────┘
        │                    │                        │
        └────────────────────┼────────────────────────┘
@@ -48,13 +48,13 @@
                             │ HTTP + x-payment header
                             ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                      BACKEND — Hono                              │
+│                 NEXT.JS API ROUTES (app/api/)                    │
 │                                                                  │
-│  1. Reçoit la query ("ETH price")                                │
+│  1. Recoit la query ("ETH price")                                │
 │  2. Hash la query → bytes32                                      │
-│  3. Appelle le contrat : isExpired(hash) ?                       │
+│  3. Appelle le contrat : checkCache(hash) ?                      │
 │                                                                  │
-│     ┌─── OUI (pas en cache ou TTL expiré) ──────────────────┐   │
+│     ┌─── OUI (pas en cache ou TTL expire) ──────────────────┐   │
 │     │                                                        │   │
 │     │  → Exige paiement x402 CHER ($0.01)                    │   │
 │     │  → Fetch l'API externe (CoinGecko / wttr.in / Groq)   │   │
@@ -63,7 +63,7 @@
 │     │                                                        │   │
 │     └────────────────────────────────────────────────────────┘   │
 │                                                                  │
-│     ┌─── NON (donnée fraîche en cache on-chain) ────────────┐   │
+│     ┌─── NON (donnee fraiche en cache on-chain) ────────────┐   │
 │     │                                                        │   │
 │     │  → Paiement x402 PAS CHER ($0.0001) ou gratuit        │   │
 │     │  → Appelle contrat : getResult(hash)                   │   │
@@ -72,7 +72,7 @@
 │     │                                                        │   │
 │     └────────────────────────────────────────────────────────┘   │
 │                                                                  │
-│  4. Émet un event SSE vers le Dashboard                          │
+│  4. Emet un event SSE vers le Dashboard                          │
 │                                                                  │
 └──────────────────────────┬───────────────────────────────────────┘
                            │
@@ -87,25 +87,15 @@
 │  │                                          │                    │
 │  │  struct CacheEntry {                     │                    │
 │  │      string data;       // "2847.32"     │                    │
-│  │      address seeder;    // qui a payé    │                    │
+│  │      address seeder;    // qui a paye    │                    │
 │  │      uint256 timestamp; // quand         │                    │
 │  │      uint256 hits;      // nb de reads   │                    │
 │  │      bool exists;       // existe ?      │                    │
 │  │  }                                       │                    │
 │  │                                          │                    │
 │  │  storeResult(hash, data) → write         │                    │
-│  │  getResult(hash) → read + hits++         │                    │
+│  │  getResult(hash) → read (view, no tx)    │                    │
 │  │  isExpired(hash, ttl) → bool             │                    │
-│  │                                          │                    │
-│  └──────────────────────────────────────────┘                    │
-│                                                                  │
-│  ┌──────────────────────────────────────────┐                    │
-│  │         AgentPool.sol                    │                    │
-│  │                                          │                    │
-│  │  deposit() → ajouter des fonds           │                    │
-│  │  authorizeAgent(addr) → whitelist        │                    │
-│  │  spend(amount) → agent débite le pool    │                    │
-│  │  getBalance() → solde restant            │                    │
 │  │                                          │                    │
 │  └──────────────────────────────────────────┘                    │
 │                                                                  │
@@ -116,177 +106,136 @@
 
 ---
 
-## 📁 Structure du Projet
+## Structure du Projet (Scaffold-ETH 2)
 
 ```
-x402-gateway/
-├── contracts/                            # ← SMART CONTRACTS
-│   ├── src/
-│   │   ├── DataCache.sol                 # Cache on-chain avec TTL et seeder tracking
-│   │   └── AgentPool.sol                 # Budget pool partagé pour agents
-│   ├── script/
-│   │   └── Deploy.s.sol                  # Script de déploiement Monad testnet
-│   ├── test/
-│   │   ├── DataCache.t.sol
-│   │   └── AgentPool.t.sol
-│   └── foundry.toml
+monad-blitz-denver/
 ├── packages/
-│   └── sdk/
-│       ├── src/
-│       │   ├── client.ts                 # SDK — le cœur
-│       │   ├── contracts.ts              # ABI + helpers contrats
-│       │   ├── cli.ts                    # CLI — bin "x402q"
-│       │   └── types.ts
-│       ├── package.json
-│       └── tsconfig.json
-├── backend/
-│   ├── src/
-│   │   ├── index.ts                      # Entry Hono
-│   │   ├── middleware/
-│   │   │   └── x402.ts                  # Payment middleware
-│   │   ├── routes/
-│   │   │   ├── price.ts                 # /api/price/:token
-│   │   │   ├── weather.ts              # /api/weather/:city
-│   │   │   ├── ai.ts                   # /api/ai/query
-│   │   │   └── query.ts                # /api/query (routeur universel)
-│   │   ├── chain.ts                     # Client viem → interagir avec contrats
-│   │   ├── events.ts                    # SSE pour live feed
-│   │   └── utils.ts
-│   ├── package.json
-│   └── .env
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── pages/
-│   │   │   ├── Landing.tsx
-│   │   │   └── Dashboard.tsx
-│   │   ├── components/
-│   │   │   ├── SearchBar.tsx
-│   │   │   ├── ResultCard.tsx
-│   │   │   ├── LiveFeed.tsx
-│   │   │   └── StatsBar.tsx
-│   │   └── hooks/
-│   │       ├── useGateway.ts
-│   │       └── useLiveFeed.ts
-│   ├── package.json
-│   └── .env
+│   ├── foundry/                              # ← SMART CONTRACTS
+│   │   ├── contracts/
+│   │   │   └── DataCache.sol                 # Cache on-chain avec TTL et seeder tracking
+│   │   ├── script/
+│   │   │   ├── Deploy.s.sol                  # Orchestrateur (existe deja)
+│   │   │   ├── DeployHelpers.s.sol           # Helpers scaffold (existe deja)
+│   │   │   └── DeployDataCache.s.sol         # Deploy notre contrat
+│   │   ├── test/
+│   │   │   └── DataCache.t.sol
+│   │   └── foundry.toml
+│   │
+│   └── nextjs/                               # ← FRONTEND + API ROUTES
+│       ├── app/
+│       │   ├── page.tsx                      # Landing page
+│       │   ├── dashboard/
+│       │   │   └── page.tsx                  # Dashboard principal
+│       │   └── api/
+│       │       ├── query/route.ts            # POST /api/query (route universelle)
+│       │       ├── stats/route.ts            # GET /api/stats (stats on-chain)
+│       │       └── events/route.ts           # GET /api/events (SSE live feed)
+│       ├── components/
+│       │   ├── gateway/
+│       │   │   ├── SearchBar.tsx
+│       │   │   ├── ResultCard.tsx
+│       │   │   ├── LiveFeed.tsx
+│       │   │   └── StatsBar.tsx
+│       │   └── ...                           # Composants scaffold existants
+│       ├── hooks/
+│       │   └── gateway/
+│       │       ├── useGateway.ts
+│       │       └── useLiveFeed.ts
+│       ├── utils/
+│       │   └── gateway/
+│       │       └── chain.ts                  # Client viem → interagir avec DataCache
+│       ├── contracts/
+│       │   └── deployedContracts.ts          # Auto-genere par scaffold apres deploy
+│       └── scaffold.config.ts                # Deja configure pour Monad (chain id 143)
+│
 ├── agents/
-│   └── swarm.ts
-└── README.md
+│   └── swarm.ts                              # Swarm d'agents pour la demo
+│
+├── ROADMAP-v3.md
+└── package.json                              # Monorepo yarn workspaces
 ```
 
 ---
 
-## ⏱ PHASE 0 — Setup `[0:00 → 0:30]`
+## PHASE 0 — Setup `[0:00 → 0:20]`
 
-### 0:00 → 0:15 — Comptes et clés
+### 0:00 → 0:10 — Comptes et cles
 
-**Objectif** : avoir toutes les clés prêtes pour ne plus jamais s'arrêter.
+**Objectif** : avoir toutes les cles pretes.
 
 1. **Thirdweb Dashboard** → https://thirdweb.com/dashboard
-   - Créer un projet "x402-gateway"
+   - Creer un projet "x402-gateway"
    - Settings → API Keys → copier **Client ID** + **Secret Key**
    - Wallets → Server Wallets → copier l'adresse du **Server Wallet**
 
 2. **Monad Faucet** → https://faucet.monad.xyz
-   - Envoyer du MON testnet au Server Wallet (gas pour les tx)
-   - Envoyer du MON testnet à un wallet personnel (pour tester comme buyer)
+   - Envoyer du MON au Server Wallet (gas pour les tx)
+   - Envoyer du MON au deployer scaffold-eth (voir `yarn account`)
 
 3. **Groq** → https://console.groq.com
-   - Générer une API key
+   - Generer une API key
 
-4. **Créer `.env`** à la racine :
+4. **Creer `.env` dans `packages/foundry/`** (y a deja un `.env.example`) :
+   ```env
+   ETH_KEYSTORE_ACCOUNT=scaffold-eth-default
+   ```
+
+5. **Creer `.env.local` dans `packages/nextjs/`** :
    ```env
    # Thirdweb
    THIRDWEB_SECRET_KEY=sk_xxx
-   NEXT_PUBLIC_CLIENT_ID=xxx
+   NEXT_PUBLIC_THIRDWEB_CLIENT_ID=xxx
    SERVER_WALLET=0x...
 
-   # Contrats (rempli après déploiement)
+   # Contrat (rempli apres deploy)
    DATACACHE_ADDRESS=
-   AGENTPOOL_ADDRESS=
 
    # APIs
    GROQ_API_KEY=gsk_xxx
 
-   # Monad
-   MONAD_RPC=https://testnet-rpc.monad.xyz
-   MONAD_CHAIN_ID=10143
-
-   # Wallet backend (pour appeler les contrats)
+   # Wallet backend (pour ecrire dans le contrat depuis les API routes)
    BACKEND_PRIVATE_KEY=0x...
-
-   # Wallet test buyer (pour le CLI et agents)
-   BUYER_PRIVATE_KEY=0x...
    ```
 
-### 0:15 → 0:30 — Init monorepo
+### 0:10 → 0:20 — Verifier le setup
 
 ```bash
-mkdir x402-gateway && cd x402-gateway
+# Le projet est deja init, on verifie que tout marche
+yarn install
+yarn chain          # lance anvil local pour tester
+yarn compile        # verifie que foundry compile
 
-# Contracts
-mkdir -p contracts/src contracts/script contracts/test
-cd contracts
-forge init --no-git --no-commit
-cd ..
-
-# Backend
-mkdir -p backend/src/middleware backend/src/routes
-cd backend
-npm init -y
-npm install hono @hono/node-server dotenv viem
-npm install thirdweb x402-hono
-npm install -D typescript @types/node ts-node
-npx tsc --init
-cd ..
-
-# SDK + CLI
-mkdir -p packages/sdk/src
-cd packages/sdk
-npm init -y
-npm install thirdweb commander chalk viem
-npm install -D typescript @types/node
-npx tsc --init
-cd ../..
-
-# Frontend
-npm create vite@latest frontend -- --template react-ts
-cd frontend
-npm install thirdweb viem
-npm install -D tailwindcss @tailwindcss/vite
-cd ..
-
-# Agents
-mkdir agents
+# Dans un autre terminal
+yarn start          # lance le frontend Next.js
 ```
 
-**✅ Checkpoint** : tous les dossiers existent, les dépendances sont installées.
+**Checkpoint** : le scaffold tourne, le site s'affiche avec le shader gradient.
 
 ---
 
-## ⏱ PHASE 1 — Smart Contracts `[0:30 → 1:30]`
+## PHASE 1 — Smart Contract `[0:20 → 1:00]`
 
-C'est la **fondation** du projet. On le fait en premier parce que tout le reste en dépend.
+On fait **un seul contrat** : `DataCache.sol`. Pas d'AgentPool (on coupe pour gagner du temps, on pourra l'ajouter plus tard si besoin).
 
-### 0:30 → 1:00 — DataCache.sol
+### 0:20 → 0:45 — DataCache.sol
 
-**Objectif** : un contrat qui stocke des résultats de query on-chain, avec un TTL et un seeder.
+**Objectif** : un contrat qui stocke des resultats de query on-chain, avec un TTL et un seeder.
 
-#### Fichier `contracts/src/DataCache.sol`
+#### Fichier `packages/foundry/contracts/DataCache.sol`
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 contract DataCache {
 
-    // ── Structure d'une entrée en cache ───────────────────────
+    // ── Structure d'une entree en cache ───────────────────────
     struct CacheEntry {
-        string data;          // Le résultat (ex: "2847.32")
+        string data;          // Le resultat (ex: "2847.32")
         string query;         // La query originale (ex: "ETH price")
-        address seeder;       // Qui a payé le fetch en premier
-        uint256 timestamp;    // Quand la donnée a été écrite
+        address seeder;       // Qui a paye le fetch en premier
+        uint256 timestamp;    // Quand la donnee a ete ecrite
         uint256 hits;         // Combien de fois lue depuis
         bool exists;          // Existe dans le cache
     }
@@ -295,11 +244,11 @@ contract DataCache {
     mapping(bytes32 => CacheEntry) public entries;
 
     // Compteurs globaux pour le dashboard
-    uint256 public totalSeeds;       // Nombre de premières queries
-    uint256 public totalHits;        // Nombre de lectures cache
-    uint256 public totalQueries;     // Seeds + hits
+    uint256 public totalSeeds;
+    uint256 public totalHits;
+    uint256 public totalQueries;
 
-    // TTL par défaut : 60 secondes
+    // TTL par defaut : 60 secondes
     uint256 public defaultTTL = 60;
 
     // Owner (le backend)
@@ -320,11 +269,6 @@ contract DataCache {
         uint256 totalHits
     );
 
-    event DataExpired(
-        bytes32 indexed queryHash,
-        uint256 previousTimestamp
-    );
-
     // ── Modifiers ─────────────────────────────────────────────
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
@@ -332,20 +276,17 @@ contract DataCache {
     }
 
     // ── Constructor ───────────────────────────────────────────
-    constructor() {
-        owner = msg.sender;
+    constructor(address _owner) {
+        owner = _owner;
     }
 
     // ── Fonctions principales ─────────────────────────────────
 
-    /// @notice Vérifie si une query est en cache ET pas expirée
-    /// @param queryHash Le hash keccak256 de la query
-    /// @return isCached true si la donnée est fraîche
-    /// @return data Le résultat stocké (vide si pas en cache)
-    function checkCache(bytes32 queryHash) 
-        external 
-        view 
-        returns (bool isCached, string memory data) 
+    /// @notice Verifie si une query est en cache ET pas expiree
+    function checkCache(bytes32 queryHash)
+        external
+        view
+        returns (bool isCached, string memory data)
     {
         CacheEntry storage entry = entries[queryHash];
 
@@ -353,19 +294,14 @@ contract DataCache {
             return (false, "");
         }
 
-        // Vérifier le TTL
         if (block.timestamp - entry.timestamp > defaultTTL) {
-            return (false, "");  // Expiré
+            return (false, "");
         }
 
         return (true, entry.data);
     }
 
-    /// @notice Stocke un nouveau résultat (appelé quand cache miss)
-    /// @param queryHash Le hash de la query
-    /// @param query La query en clair (pour les logs)
-    /// @param data Le résultat à stocker
-    /// @param seeder L'adresse de celui qui a payé
+    /// @notice Stocke un nouveau resultat (appele quand cache miss)
     function storeResult(
         bytes32 queryHash,
         string calldata query,
@@ -373,11 +309,6 @@ contract DataCache {
         address seeder
     ) external onlyOwner {
         CacheEntry storage entry = entries[queryHash];
-
-        // Si ça existait mais expiré, reset
-        if (entry.exists && block.timestamp - entry.timestamp > defaultTTL) {
-            emit DataExpired(queryHash, entry.timestamp);
-        }
 
         entry.data = data;
         entry.query = query;
@@ -392,37 +323,33 @@ contract DataCache {
         emit DataSeeded(queryHash, query, seeder, data, block.timestamp);
     }
 
-    /// @notice Enregistre une lecture cache (appelé quand cache hit)
-    /// @param queryHash Le hash de la query
-    /// @param reader L'adresse de celui qui lit
-    /// @return data Le résultat stocké
-    function recordHit(bytes32 queryHash, address reader)
+    /// @notice Lecture cache — view only, pas de tx, pas de gas pour le reader
+    /// Les hits sont trackes off-chain par le backend pour eviter un write on-chain inutile
+    function getResult(bytes32 queryHash)
         external
-        onlyOwner
-        returns (string memory data)
+        view
+        returns (string memory data, address seeder, uint256 timestamp, uint256 hits)
     {
         CacheEntry storage entry = entries[queryHash];
         require(entry.exists, "Entry does not exist");
-        require(
-            block.timestamp - entry.timestamp <= defaultTTL,
-            "Entry expired"
-        );
+        return (entry.data, entry.seeder, entry.timestamp, entry.hits);
+    }
 
-        entry.hits++;
-        totalHits++;
-        totalQueries++;
+    /// @notice Increment hits — appele par le backend quand il veut (batch, async, etc.)
+    function recordHits(bytes32 queryHash, uint256 count) external onlyOwner {
+        entries[queryHash].hits += count;
+        totalHits += count;
+        totalQueries += count;
 
-        emit CacheHit(queryHash, reader, entry.hits);
-
-        return entry.data;
+        emit CacheHit(queryHash, address(0), entries[queryHash].hits);
     }
 
     // ── Fonctions de lecture ──────────────────────────────────
 
-    /// @notice Récupère les détails complets d'une entrée
-    function getEntry(bytes32 queryHash) 
-        external 
-        view 
+    /// @notice Recupere les details complets d'une entree
+    function getEntry(bytes32 queryHash)
+        external
+        view
         returns (
             string memory data,
             string memory query,
@@ -430,7 +357,7 @@ contract DataCache {
             uint256 timestamp,
             uint256 hits,
             bool isExpired
-        ) 
+        )
     {
         CacheEntry storage entry = entries[queryHash];
         require(entry.exists, "Entry does not exist");
@@ -440,257 +367,113 @@ contract DataCache {
     }
 
     /// @notice Stats globales pour le dashboard
-    function getStats() 
-        external 
-        view 
-        returns (uint256 seeds, uint256 hits, uint256 queries) 
+    function getStats()
+        external
+        view
+        returns (uint256 seeds, uint256 hits, uint256 queries)
     {
         return (totalSeeds, totalHits, totalQueries);
     }
 
     // ── Admin ─────────────────────────────────────────────────
 
-    /// @notice Changer le TTL (owner only)
     function setTTL(uint256 newTTL) external onlyOwner {
         defaultTTL = newTTL;
     }
 
-    /// @notice Transférer l'ownership
     function transferOwnership(address newOwner) external onlyOwner {
         owner = newOwner;
     }
 }
 ```
 
-**Ce que ce contrat fait :**
-- `checkCache(hash)` → le backend appelle ça en premier. Si `true` → cache hit (pas cher). Si `false` → cache miss (cher).
-- `storeResult(hash, query, data, seeder)` → écrit la donnée on-chain après un fetch API.
-- `recordHit(hash, reader)` → incrémente le compteur et retourne la donnée.
-- `getStats()` → pour le dashboard : total seeds, hits, queries.
-- TTL de 60 secondes → après expiration, la donnée est considérée périmée, le prochain repaye le prix fort.
+**Changements vs roadmap originale :**
+- `constructor(address _owner)` au lieu de `constructor()` → compatible avec le pattern scaffold-eth (`new DataCache(deployer)`)
+- `getResult()` est maintenant **view** (pas de write on-chain pour un cache read)
+- `recordHits()` en batch au lieu de `recordHit()` unitaire → le backend peut batcher les hits periodiquement
+- Suppression de `AgentPool.sol` → on le fait que si on a le temps
 
-### 1:00 → 1:15 — AgentPool.sol
+### 0:45 → 0:55 — Script de deploiement
 
-**Objectif** : un pool où des humains déposent des fonds, des agents autorisés dépensent.
-
-#### Fichier `contracts/src/AgentPool.sol`
+#### Fichier `packages/foundry/script/DeployDataCache.s.sol`
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.19;
 
-contract AgentPool {
+import "./DeployHelpers.s.sol";
+import "../contracts/DataCache.sol";
 
-    address public owner;
-
-    // Agents autorisés à dépenser
-    mapping(address => bool) public authorizedAgents;
-
-    // Qui a déposé combien (pour tracking)
-    mapping(address => uint256) public deposits;
-
-    // Stats
-    uint256 public totalDeposited;
-    uint256 public totalSpent;
-    uint256 public totalQueries;
-
-    // ── Events ────────────────────────────────────────────────
-    event Deposited(address indexed depositor, uint256 amount, uint256 newBalance);
-    event AgentAuthorized(address indexed agent);
-    event AgentRevoked(address indexed agent);
-    event QueryPaid(address indexed agent, uint256 cost, bytes32 queryHash, uint256 poolBalance);
-    event Withdrawn(address indexed to, uint256 amount);
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not owner");
-        _;
-    }
-
-    modifier onlyAuthorized() {
-        require(authorizedAgents[msg.sender] || msg.sender == owner, "Not authorized");
-        _;
-    }
-
-    constructor() {
-        owner = msg.sender;
-    }
-
-    // ── Dépôt ─────────────────────────────────────────────────
-
-    /// @notice N'importe qui peut déposer des fonds dans le pool
-    function deposit() external payable {
-        require(msg.value > 0, "Must send value");
-
-        deposits[msg.sender] += msg.value;
-        totalDeposited += msg.value;
-
-        emit Deposited(msg.sender, msg.value, address(this).balance);
-    }
-
-    // ── Gestion des agents ────────────────────────────────────
-
-    /// @notice Autoriser un agent à dépenser depuis le pool
-    function authorizeAgent(address agent) external onlyOwner {
-        authorizedAgents[agent] = true;
-        emit AgentAuthorized(agent);
-    }
-
-    /// @notice Révoquer un agent
-    function revokeAgent(address agent) external onlyOwner {
-        authorizedAgents[agent] = false;
-        emit AgentRevoked(agent);
-    }
-
-    // ── Dépense ───────────────────────────────────────────────
-
-    /// @notice Un agent autorisé (ou le backend) débite le pool pour payer une query
-    /// @param cost Le coût de la query en wei
-    /// @param queryHash Le hash de la query (pour les logs)
-    function payForQuery(uint256 cost, bytes32 queryHash) external onlyAuthorized {
-        require(address(this).balance >= cost, "Pool balance too low");
-
-        totalSpent += cost;
-        totalQueries++;
-
-        // Transférer le coût au owner (le backend/service)
-        payable(owner).transfer(cost);
-
-        emit QueryPaid(msg.sender, cost, queryHash, address(this).balance);
-    }
-
-    // ── Lecture ────────────────────────────────────────────────
-
-    /// @notice Solde actuel du pool
-    function getPoolBalance() external view returns (uint256) {
-        return address(this).balance;
-    }
-
-    /// @notice Stats pour le dashboard
-    function getStats() 
-        external 
-        view 
-        returns (uint256 balance, uint256 deposited, uint256 spent, uint256 queries) 
-    {
-        return (address(this).balance, totalDeposited, totalSpent, totalQueries);
-    }
-
-    // ── Admin ─────────────────────────────────────────────────
-
-    /// @notice Retirer les fonds (urgence seulement)
-    function withdraw(uint256 amount) external onlyOwner {
-        require(address(this).balance >= amount, "Insufficient balance");
-        payable(owner).transfer(amount);
-        emit Withdrawn(owner, amount);
-    }
-
-    /// @notice Recevoir du MON directement
-    receive() external payable {
-        deposits[msg.sender] += msg.value;
-        totalDeposited += msg.value;
-        emit Deposited(msg.sender, msg.value, address(this).balance);
-    }
-}
-```
-
-### 1:15 → 1:30 — Déploiement sur Monad Testnet
-
-#### Fichier `contracts/script/Deploy.s.sol`
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
-
-import "forge-std/Script.sol";
-import "../src/DataCache.sol";
-import "../src/AgentPool.sol";
-
-contract Deploy is Script {
-    function run() external {
-        uint256 deployerKey = vm.envUint("BACKEND_PRIVATE_KEY");
-
-        vm.startBroadcast(deployerKey);
-
-        DataCache cache = new DataCache();
+contract DeployDataCache is ScaffoldETHDeploy {
+    function run() external ScaffoldEthDeployerRunner {
+        DataCache cache = new DataCache(deployer);
         console.log("DataCache deployed at:", address(cache));
-
-        AgentPool pool = new AgentPool();
-        console.log("AgentPool deployed at:", address(pool));
-
-        vm.stopBroadcast();
     }
 }
 ```
 
-#### Fichier `contracts/foundry.toml`
+#### Modifier `packages/foundry/script/Deploy.s.sol`
 
-```toml
-[profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
-solc_version = "0.8.24"
-evm_version = "shanghai"
+```solidity
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
 
-[rpc_endpoints]
-monad_testnet = "${MONAD_RPC}"
+import "./DeployHelpers.s.sol";
+import { DeployDataCache } from "./DeployDataCache.s.sol";
+
+contract DeployScript is ScaffoldETHDeploy {
+    function run() external {
+        DeployDataCache deployDataCache = new DeployDataCache();
+        deployDataCache.run();
+    }
+}
 ```
 
-#### Commandes de déploiement
+#### Commandes
 
 ```bash
-cd contracts
-
 # Compiler
-forge build
+yarn compile
 
-# Tester
-forge test
+# Tester (optionnel si on a le temps)
+cd packages/foundry && forge test
 
-# Déployer sur Monad testnet
-forge script script/Deploy.s.sol:Deploy \
-  --rpc-url $MONAD_RPC \
-  --private-key $BACKEND_PRIVATE_KEY \
-  --broadcast
+# Deployer sur Monad testnet
+yarn deploy --network monad
 
-# Copier les adresses dans .env
-# DATACACHE_ADDRESS=0x...
-# AGENTPOOL_ADDRESS=0x...
+# L'ABI est auto-exportee dans packages/nextjs/contracts/deployedContracts.ts
+# → Le front peut lire le contrat directement via les hooks scaffold-eth
 ```
 
-#### Copier les ABIs pour le backend et le SDK
+> **Note** : il faut ajouter le RPC monad dans `foundry.toml` :
+> ```toml
+> [rpc_endpoints]
+> monad = "https://rpc.monad.xyz"
+> ```
 
-```bash
-# Après forge build, les ABIs sont dans contracts/out/
-cp contracts/out/DataCache.sol/DataCache.json backend/src/abi/
-cp contracts/out/AgentPool.sol/AgentPool.json backend/src/abi/
-cp contracts/out/DataCache.sol/DataCache.json packages/sdk/src/abi/
-```
-
-**✅ Checkpoint Phase 1** : les deux contrats sont déployés sur Monad testnet, les adresses sont dans `.env`, les ABIs sont copiées.
+**Checkpoint Phase 1** : DataCache deploye sur Monad, ABI auto-generee dans le frontend.
 
 ---
 
-## ⏱ PHASE 2 — Backend + x402 `[1:30 → 3:00]`
+## PHASE 2 — API Routes Next.js `[1:00 → 2:15]`
 
-### 1:30 → 1:50 — Client blockchain (viem)
+On utilise les **API routes Next.js** (`app/api/`) au lieu d'un backend Hono separe. Ca simplifie le deploy (tout est dans un seul service) et ca utilise le monorepo existant.
 
-**Objectif** : un module qui parle aux smart contracts depuis le backend.
+### 1:00 → 1:20 — Utilitaire blockchain
 
-#### Fichier `backend/src/chain.ts`
+#### Fichier `packages/nextjs/utils/gateway/chain.ts`
 
 ```ts
-import { createPublicClient, createWalletClient, http, keccak256, toHex, encodeFunctionData } from "viem";
+import { createPublicClient, createWalletClient, http, keccak256, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { monadTestnet } from "viem/chains"; // ou définir custom
-import "dotenv/config";
 
-// Si monadTestnet n'existe pas dans viem, définir manuellement :
+// Monad chain (deja defini dans scaffold.config.ts, on reutilise)
 const monad = {
-  id: 10143,
-  name: "Monad Testnet",
+  id: 143,
+  name: "Monad",
   nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
   rpcUrls: {
-    default: { http: [process.env.MONAD_RPC!] },
+    default: { http: ["https://rpc.monad.xyz"] },
   },
 } as const;
 
@@ -719,14 +502,16 @@ const DATACACHE_ABI = [
     outputs: [],
   },
   {
-    name: "recordHit",
+    name: "getResult",
     type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "queryHash", type: "bytes32" },
-      { name: "reader", type: "address" },
+    stateMutability: "view",
+    inputs: [{ name: "queryHash", type: "bytes32" }],
+    outputs: [
+      { name: "data", type: "string" },
+      { name: "seeder", type: "address" },
+      { name: "timestamp", type: "uint256" },
+      { name: "hits", type: "uint256" },
     ],
-    outputs: [{ name: "data", type: "string" }],
   },
   {
     name: "getStats",
@@ -759,16 +544,11 @@ const cacheAddress = process.env.DATACACHE_ADDRESS! as `0x${string}`;
 
 // ── Helpers ───────────────────────────────────────────────────
 
-/// Hasher une query de manière déterministe
 export function hashQuery(query: string): `0x${string}` {
   return keccak256(toHex(query.toLowerCase().trim()));
 }
 
-/// Vérifier si la query est en cache on-chain
-export async function checkOnChainCache(queryHash: `0x${string}`): Promise<{
-  isCached: boolean;
-  data: string;
-}> {
+export async function checkOnChainCache(queryHash: `0x${string}`) {
   const result = await publicClient.readContract({
     address: cacheAddress,
     abi: DATACACHE_ABI,
@@ -778,13 +558,12 @@ export async function checkOnChainCache(queryHash: `0x${string}`): Promise<{
   return { isCached: result[0], data: result[1] };
 }
 
-/// Stocker un résultat on-chain (après un cache miss)
 export async function storeResultOnChain(
   queryHash: `0x${string}`,
   query: string,
   data: string,
-  seeder: string
-): Promise<string> {
+  seeder: string,
+) {
   const txHash = await walletClient.writeContract({
     address: cacheAddress,
     abi: DATACACHE_ABI,
@@ -794,26 +573,7 @@ export async function storeResultOnChain(
   return txHash;
 }
 
-/// Enregistrer un cache hit on-chain
-export async function recordHitOnChain(
-  queryHash: `0x${string}`,
-  reader: string
-): Promise<string> {
-  const txHash = await walletClient.writeContract({
-    address: cacheAddress,
-    abi: DATACACHE_ABI,
-    functionName: "recordHit",
-    args: [queryHash, reader as `0x${string}`],
-  });
-  return txHash;
-}
-
-/// Lire les stats globales
-export async function getOnChainStats(): Promise<{
-  seeds: bigint;
-  hits: bigint;
-  queries: bigint;
-}> {
+export async function getOnChainStats() {
   const result = await publicClient.readContract({
     address: cacheAddress,
     abi: DATACACHE_ABI,
@@ -823,25 +583,21 @@ export async function getOnChainStats(): Promise<{
 }
 ```
 
-### 1:50 → 2:20 — Routes API avec logique on-chain
+### 1:20 → 1:50 — Route API principale
 
-**Objectif** : chaque route check le contrat d'abord, puis soit lit le cache, soit fetch l'API et stocke.
-
-#### Fichier `backend/src/routes/query.ts` (route universelle)
+#### Fichier `packages/nextjs/app/api/query/route.ts`
 
 ```ts
-import { Hono } from "hono";
-import { hashQuery, checkOnChainCache, storeResultOnChain, recordHitOnChain } from "../chain.js";
-import { emitEvent } from "../events.js";
-
-const query = new Hono();
+import { NextRequest, NextResponse } from "next/server";
+import { hashQuery, checkOnChainCache, storeResultOnChain } from "~~/utils/gateway/chain";
+import { emitEvent } from "~~/utils/gateway/events";
 
 // ── Detect intent ─────────────────────────────────────────
 function detectIntent(input: string): { type: string; param: string } {
   const lower = input.toLowerCase().trim();
 
   const priceMatch = lower.match(
-    /(?:price|prix|cours)\s+(?:of\s+)?(\w+)|(\w+)\s+price|(ethereum|bitcoin|btc|eth|sol|solana)/
+    /(?:price|prix|cours)\s+(?:of\s+)?(\w+)|(\w+)\s+price|(ethereum|bitcoin|btc|eth|sol|solana)/,
   );
   if (priceMatch) {
     const token = priceMatch[1] || priceMatch[2] || priceMatch[3];
@@ -850,7 +606,7 @@ function detectIntent(input: string): { type: string; param: string } {
   }
 
   const weatherMatch = lower.match(
-    /(?:weather|météo|meteo|temperature|temps)\s+(?:in\s+|à\s+)?(\w+)|(\w+)\s+weather/
+    /(?:weather|meteo|temperature|temps)\s+(?:in\s+|a\s+)?(\w+)|(\w+)\s+weather/,
   );
   if (weatherMatch) {
     return { type: "weather", param: weatherMatch[1] || weatherMatch[2] };
@@ -864,7 +620,7 @@ async function fetchFromSource(type: string, param: string): Promise<string> {
   switch (type) {
     case "price": {
       const res = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${param}&vs_currencies=usd&include_24hr_change=true`
+        `https://api.coingecko.com/api/v3/simple/price?ids=${param}&vs_currencies=usd&include_24hr_change=true`,
       );
       const json = await res.json();
       return JSON.stringify(json[param] || { error: "not found" });
@@ -903,66 +659,55 @@ async function fetchFromSource(type: string, param: string): Promise<string> {
   }
 }
 
-// ── Route principale ──────────────────────────────────────
-query.post("/", async (c) => {
-  const { query: input } = await c.req.json();
-  if (!input) return c.json({ error: "Missing 'query'" }, 400);
+// ── POST /api/query ──────────────────────────────────────
+export async function POST(req: NextRequest) {
+  const { query: input } = await req.json();
+  if (!input) return NextResponse.json({ error: "Missing 'query'" }, { status: 400 });
 
   const intent = detectIntent(input);
   const qHash = hashQuery(input);
 
   // L'adresse du payer (extraite du header x402 par le middleware)
-  const payerAddress = c.req.header("x-payer") || "0x0000000000000000000000000000000000000000";
+  const payerAddress = req.headers.get("x-payer") || "0x0000000000000000000000000000000000000000";
 
-  // ── ÉTAPE 1 : Check le contrat on-chain ────────────────
+  // ── ETAPE 1 : Check le contrat on-chain ────────────────
   const { isCached, data: cachedData } = await checkOnChainCache(qHash);
 
   if (isCached) {
-    // ── CACHE HIT : donnée fraîche on-chain ──────────────
-    // Le user a payé PEU (le middleware x402 a appliqué le prix bas)
-
-    // Enregistrer le hit on-chain (hits++ dans le contrat)
-    const txHash = await recordHitOnChain(qHash, payerAddress);
-
+    // ── CACHE HIT : donnee fraiche on-chain ──────────────
     emitEvent({
       type: "cache_hit",
       query: input,
-      user: payerAddress.slice(0, 6) + "…" + payerAddress.slice(-4),
+      user: payerAddress.slice(0, 6) + "..." + payerAddress.slice(-4),
       cost: "$0.0001",
       cached: true,
     });
 
-    return c.json({
+    return NextResponse.json({
       query: input,
       intent: intent.type,
       data: JSON.parse(cachedData),
       cached: true,
       cost: "$0.0001",
-      txHash,
       source: "on-chain cache",
       timestamp: Date.now(),
     });
   }
 
-  // ── CACHE MISS : donnée pas en cache ou expirée ────────
-  // Le user a payé CHER (le middleware x402 a appliqué le prix fort)
-
-  // Fetch depuis l'API externe
+  // ── CACHE MISS : donnee pas en cache ou expiree ────────
   const freshData = await fetchFromSource(intent.type, intent.param);
-
-  // Écrire le résultat on-chain
   const txHash = await storeResultOnChain(qHash, input, freshData, payerAddress);
 
   emitEvent({
     type: "query",
     query: input,
-    user: payerAddress.slice(0, 6) + "…" + payerAddress.slice(-4),
+    user: payerAddress.slice(0, 6) + "..." + payerAddress.slice(-4),
     cost: "$0.01",
     cached: false,
     source: intent.type,
   });
 
-  return c.json({
+  return NextResponse.json({
     query: input,
     intent: intent.type,
     data: JSON.parse(freshData),
@@ -973,86 +718,30 @@ query.post("/", async (c) => {
     source: intent.type,
     timestamp: Date.now(),
   });
-});
-
-export default query;
-```
-
-#### Routes spécifiques (même pattern, simplifié)
-
-Les routes `/api/price/:token`, `/api/weather/:city`, `/api/ai/query` suivent exactement le même pattern que `/api/query` mais sans le routeur intelligent. Elles appellent directement la bonne API. Copier le pattern ci-dessus en enlevant `detectIntent`.
-
-### 2:20 → 2:40 — x402 Payment Middleware avec pricing dynamique
-
-**Objectif** : le prix x402 dépend de si la donnée est en cache ou pas.
-
-#### Fichier `backend/src/middleware/x402.ts`
-
-```ts
-import { createThirdwebClient } from "thirdweb";
-import { facilitator } from "thirdweb/x402";
-import { hashQuery, checkOnChainCache } from "../chain.js";
-
-export const thirdwebClient = createThirdwebClient({
-  secretKey: process.env.THIRDWEB_SECRET_KEY!,
-});
-
-export const twFacilitator = facilitator({
-  client: thirdwebClient,
-  serverWalletAddress: process.env.SERVER_WALLET!,
-});
-
-// ── Middleware custom avec pricing dynamique ───────────────
-// Le prix dépend de si la query est en cache on-chain ou pas
-export async function dynamicPricingMiddleware(c: any, next: any) {
-  // Extraire la query pour calculer le hash
-  let queryString = "";
-
-  if (c.req.method === "POST") {
-    // Pour /api/query → lire le body
-    const body = await c.req.json();
-    queryString = body.query || body.prompt || "";
-    // Remettre le body pour les handlers suivants
-    c.req._body = body;
-  } else {
-    // Pour GET /api/price/:token → construire la query à partir du path
-    queryString = c.req.path;
-  }
-
-  if (!queryString) {
-    await next();
-    return;
-  }
-
-  const qHash = hashQuery(queryString);
-  const { isCached } = await checkOnChainCache(qHash);
-
-  // Stocker le résultat du check pour que le handler le sache
-  c.set("isCached", isCached);
-  c.set("queryHash", qHash);
-
-  if (isCached) {
-    // CACHE HIT → prix bas
-    // Option A : on laisse passer gratuitement
-    // Option B : on demande quand même un micro-paiement
-    // Pour la démo, Option A est plus simple et plus impressionnant
-    await next();
-  } else {
-    // CACHE MISS → prix élevé, le middleware x402 classique s'applique
-    // Ici on appelle le paymentMiddleware thirdweb
-    await next();
-  }
 }
 ```
 
-**Note** : le pricing dynamique x402 est complexe à setup pendant un hackathon. L'approche la plus pragmatique :
-- Cache miss → le middleware x402 classique exige le paiement ($0.01)
-- Cache hit → on bypass le middleware x402, la lecture est gratuite ou quasi gratuite
-- Le contrat on-chain prouve la différence de traitement
+### 1:50 → 2:00 — Route stats
 
-### 2:40 → 3:00 — Assembler le backend + SSE
+#### Fichier `packages/nextjs/app/api/stats/route.ts`
 
-#### Fichier `backend/src/events.ts`
+```ts
+import { NextResponse } from "next/server";
+import { getOnChainStats } from "~~/utils/gateway/chain";
+
+export async function GET() {
+  const stats = await getOnChainStats();
+  return NextResponse.json({
+    seeds: stats.seeds.toString(),
+    hits: stats.hits.toString(),
+    queries: stats.queries.toString(),
+  });
+}
+```
+
+### 2:00 → 2:15 — SSE Events
+
+#### Fichier `packages/nextjs/utils/gateway/events.ts`
 
 ```ts
 interface GatewayEvent {
@@ -1070,109 +759,106 @@ export function emitEvent(event: GatewayEvent) {
   const data = JSON.stringify({ ...event, timestamp: Date.now() });
   clients.forEach((controller) => {
     try {
-      controller.enqueue(`data: ${data}\n\n`);
+      controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
     } catch {
       clients.delete(controller);
     }
   });
 }
 
-export function sseHandler() {
-  return new Response(
-    new ReadableStream({
-      start(controller) {
-        clients.add(controller);
-        const heartbeat = setInterval(() => {
-          try { controller.enqueue(`: heartbeat\n\n`); }
-          catch { clearInterval(heartbeat); clients.delete(controller); }
-        }, 15000);
-      },
-      cancel(controller) { clients.delete(controller); },
-    }),
-    {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "Access-Control-Allow-Origin": "*",
-      },
-    }
-  );
+export function addSSEClient(controller: ReadableStreamDefaultController) {
+  clients.add(controller);
+}
+
+export function removeSSEClient(controller: ReadableStreamDefaultController) {
+  clients.delete(controller);
 }
 ```
 
-#### Fichier `backend/src/index.ts`
+#### Fichier `packages/nextjs/app/api/events/route.ts`
 
 ```ts
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
-import { cors } from "hono/cors";
-import "dotenv/config";
+import { addSSEClient, removeSSEClient } from "~~/utils/gateway/events";
 
-import query from "./routes/query.js";
-import { sseHandler } from "./events.js";
-import { getOnChainStats } from "./chain.js";
+export async function GET() {
+  const stream = new ReadableStream({
+    start(controller) {
+      addSSEClient(controller);
 
-const app = new Hono();
-app.use("/*", cors());
-
-// SSE pour le live feed
-app.get("/events", (c) => sseHandler());
-
-// Stats on-chain
-app.get("/api/stats", async (c) => {
-  const stats = await getOnChainStats();
-  return c.json({
-    seeds: stats.seeds.toString(),
-    hits: stats.hits.toString(),
-    queries: stats.queries.toString(),
+      const heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(new TextEncoder().encode(": heartbeat\n\n"));
+        } catch {
+          clearInterval(heartbeat);
+          removeSSEClient(controller);
+        }
+      }, 15000);
+    },
+    cancel(controller: any) {
+      removeSSEClient(controller);
+    },
   });
-});
 
-// Routes API (avec x402 + logique on-chain)
-app.route("/api/query", query);
-
-// Health
-app.get("/", (c) => c.json({ status: "ok", service: "x402-gateway" }));
-
-serve({ fetch: app.fetch, port: 3001 });
-console.log("🚀 Gateway running on http://localhost:3001");
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
 ```
 
 **Tester** :
 ```bash
-# Démarrer le backend
-npx ts-node --esm src/index.ts
+# Le frontend tourne deja avec yarn start
 
-# Test direct (sans x402 pour l'instant)
-curl -X POST http://localhost:3001/api/query \
+# Test direct
+curl -X POST http://localhost:3000/api/query \
   -H "Content-Type: application/json" \
   -d '{"query":"ETH price"}'
 
-# Vérifier les stats on-chain
-curl http://localhost:3001/api/stats
+# Verifier les stats
+curl http://localhost:3000/api/stats
 ```
 
-**✅ Checkpoint Phase 2** : le backend check le contrat avant chaque query, écrit les résultats on-chain, et les cache hits lisent directement depuis le contrat.
+**Checkpoint Phase 2** : les API routes check le contrat, ecrivent on-chain, et servent les resultats.
 
 ---
 
-## ⏱ PHASE 3 — SDK + CLI `[3:00 → 3:45]`
+## PHASE 3 — Frontend Dashboard `[2:15 → 3:30]`
 
-### 3:00 → 3:20 — SDK
+On utilise le **Next.js existant** avec les composants scaffold-eth (wallet connect, theming, etc. deja la).
 
-**Objectif** : une lib que n'importe quel agent importe et utilise en 3 lignes.
+### 2:15 → 2:30 — Hooks
 
-#### Fichier `packages/sdk/src/types.ts`
+#### Fichier `packages/nextjs/hooks/gateway/useLiveFeed.ts`
 
 ```ts
-export interface GatewayConfig {
-  privateKey: string;
-  gatewayUrl?: string;
-  clientId?: string;
-}
+import { useState, useEffect } from "react";
 
-export interface QueryResult {
+export function useLiveFeed() {
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const source = new EventSource("/api/events");
+    source.onmessage = (e) => {
+      const event = JSON.parse(e.data);
+      setEvents((prev) => [event, ...prev].slice(0, 30));
+    };
+    return () => source.close();
+  }, []);
+
+  return events;
+}
+```
+
+#### Fichier `packages/nextjs/hooks/gateway/useGateway.ts`
+
+```ts
+import { useState } from "react";
+
+interface QueryResult {
   query: string;
   intent: string;
   data: any;
@@ -1183,358 +869,85 @@ export interface QueryResult {
   source: string;
   timestamp: number;
 }
-```
 
-#### Fichier `packages/sdk/src/client.ts`
+export function useGateway() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<QueryResult | null>(null);
 
-```ts
-import { createThirdwebClient } from "thirdweb";
-import { wrapFetchWithPayment } from "thirdweb/x402";
-import { privateKeyToAccount } from "thirdweb/wallets";
-import type { GatewayConfig, QueryResult } from "./types.js";
-
-const DEFAULT_GATEWAY = "http://localhost:3001";
-
-export function createGatewayClient(config: GatewayConfig) {
-  const client = createThirdwebClient({
-    clientId: config.clientId || "your-client-id",
-  });
-
-  const account = privateKeyToAccount({
-    client,
-    privateKey: config.privateKey,
-  });
-
-  // wrapFetchWithPayment gère tout le flow x402 :
-  // requête → reçoit 402 → signe le paiement → retry → reçoit la data
-  const fetchWithPay = wrapFetchWithPayment(fetch, client, account);
-  const baseUrl = config.gatewayUrl || DEFAULT_GATEWAY;
-
-  return {
-    /// Query universelle — "ETH price", "Denver weather", "explain DeFi"
-    async query(input: string): Promise<QueryResult> {
-      const res = await fetchWithPay(`${baseUrl}/api/query`, {
+  async function submitQuery(input: string) {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: input }),
       });
-      if (!res.ok) throw new Error(`Gateway error: ${res.status}`);
-      return res.json();
-    },
-
-    /// Stats on-chain
-    async stats(): Promise<{ seeds: string; hits: string; queries: string }> {
-      const res = await fetch(`${baseUrl}/api/stats`);
-      return res.json();
-    },
-
-    /// Info
-    getWallet() { return account.address; },
-  };
-}
-```
-
-**Usage par un agent :**
-```ts
-import { createGatewayClient } from "x402-gateway-sdk";
-
-const gw = createGatewayClient({ privateKey: "0x..." });
-
-const result = await gw.query("ETH price");
-// result.cached === false → première fois, a payé $0.01
-// result.data === { usd: 2847.32, ... }
-
-const result2 = await gw.query("ETH price");
-// result2.cached === true → lu depuis le contrat, payé $0.0001
-```
-
-### 3:20 → 3:45 — CLI
-
-**Objectif** : `x402q "ETH price"` dans un terminal.
-
-#### Fichier `packages/sdk/src/cli.ts`
-
-```ts
-#!/usr/bin/env node
-import { Command } from "commander";
-import chalk from "chalk";
-import { createGatewayClient } from "./client.js";
-
-const program = new Command();
-
-program
-  .name("x402q")
-  .description("Query any API via x402 Gateway on Monad")
-  .version("0.1.0")
-  .option("-k, --key <key>", "Wallet private key (or set X402_PRIVATE_KEY)")
-  .option("-g, --gateway <url>", "Gateway URL", "http://localhost:3001");
-
-// ── x402q "ETH price" ────────────────────────────────────────
-program
-  .argument("[query...]", "Free-form query")
-  .option("--json", "Output raw JSON")
-  .action(async (queryParts, opts) => {
-    const input = queryParts.join(" ");
-    if (!input) { program.help(); return; }
-
-    const key = opts.key || process.env.X402_PRIVATE_KEY;
-    if (!key) {
-      console.error(chalk.red("✗ No wallet key. Set X402_PRIVATE_KEY or use --key"));
-      process.exit(1);
-    }
-
-    const gw = createGatewayClient({
-      privateKey: key,
-      gatewayUrl: program.opts().gateway,
-    });
-
-    console.log(chalk.gray(`\n  ⌕  "${input}"`));
-    console.log(chalk.gray(`  ⚡ x402 → Monad...\n`));
-
-    try {
-      const start = Date.now();
-      const result = await gw.query(input);
-      const ms = Date.now() - start;
-
-      if (opts.json) {
-        console.log(JSON.stringify(result, null, 2));
-        return;
-      }
-
-      // ── Affichage selon le type ──
-      const data = result.data;
-
-      if (result.intent === "price" && data.usd) {
-        console.log(chalk.white.bold(`  ${data.token?.toUpperCase() || "TOKEN"}`));
-        console.log(chalk.green.bold(`  $${data.usd}`));
-        if (data.usd_24h_change) {
-          const c = data.usd_24h_change >= 0 ? chalk.green : chalk.red;
-          console.log(c(`  ${data.usd_24h_change >= 0 ? "▲" : "▼"} ${data.usd_24h_change.toFixed(2)}%`));
-        }
-      } else if (result.intent === "weather" && data.temperature) {
-        console.log(chalk.yellow.bold(`  ${data.temperature}°C — ${data.condition}`));
-      } else if (typeof data === "string") {
-        console.log(chalk.white(`  ${data}`));
-      } else {
-        console.log(chalk.white(`  ${JSON.stringify(data)}`));
-      }
-
-      // ── Metadata ──
-      console.log();
-      const cached = result.cached
-        ? chalk.magenta("CACHED (on-chain)")
-        : chalk.green("FRESH (seeded)");
-      console.log(chalk.gray(`  ${cached}  ·  ${ms}ms  ·  ${result.cost}`));
-
-      if (result.txHash) {
-        console.log(chalk.gray(`  tx: ${result.txHash.slice(0, 10)}…${result.txHash.slice(-6)}`));
-      }
-      if (result.seeder && !result.cached) {
-        console.log(chalk.gray(`  seeder: ${result.seeder.slice(0, 6)}…${result.seeder.slice(-4)} (you)`));
-      }
-      console.log();
-
-    } catch (err: any) {
-      console.error(chalk.red(`\n  ✗ ${err.message}\n`));
-      process.exit(1);
-    }
-  });
-
-// ── x402q stats ──────────────────────────────────────────────
-program
-  .command("stats")
-  .description("View on-chain gateway stats")
-  .action(async () => {
-    const gw = createGatewayClient({
-      privateKey: "0x0000000000000000000000000000000000000000000000000000000000000001", // dummy, pas besoin pour stats
-      gatewayUrl: program.opts().gateway,
-    });
-    const s = await gw.stats();
-    console.log(chalk.white.bold("\n  📊 x402 Gateway Stats (on-chain)\n"));
-    console.log(chalk.green(`  Seeds (cache misses):  ${s.seeds}`));
-    console.log(chalk.magenta(`  Hits (cache reads):    ${s.hits}`));
-    console.log(chalk.white(`  Total queries:         ${s.queries}`));
-    console.log();
-  });
-
-program.parse();
-```
-
-#### Build + link
-
-```bash
-cd packages/sdk
-npx tsc
-
-# Ajouter le shebang dans dist/cli.js si nécessaire
-# Rendre exécutable
-chmod +x dist/cli.js
-
-# Link globalement
-npm link
-
-# Tester
-x402q "ETH price" --key $BUYER_PRIVATE_KEY
-x402q "ETH price" --key $BUYER_PRIVATE_KEY   # ← 2ème fois = CACHED
-x402q "Denver weather"
-x402q "explain Monad in one sentence"
-x402q stats
-x402q "BTC price" --json
-```
-
-**Résultat attendu :**
-```
-  ⌕  "ETH price"
-  ⚡ x402 → Monad...
-
-  ETHEREUM
-  $2,847.32
-  ▲ 3.42%
-
-  FRESH (seeded)  ·  342ms  ·  $0.01
-  tx: 0x7f3a8b…c1d2e3
-  seeder: 0xab12…3f4d (you)
-```
-
-```
-  ⌕  "ETH price"
-  ⚡ x402 → Monad...
-
-  ETHEREUM
-  $2,847.32
-  ▲ 3.42%
-
-  CACHED (on-chain)  ·  89ms  ·  $0.0001
-  tx: 0x9e2c1a…f5b6a7
-```
-
-**✅ Checkpoint Phase 3** : le SDK et le CLI fonctionnent. La première query paie cher et seede on-chain. La deuxième lit le cache et paie peu.
-
----
-
-## ⏱ PHASE 4 — Frontend Dashboard `[3:45 → 5:00]`
-
-### 3:45 → 4:15 — Structure + Hooks
-
-**Objectif** : un dashboard qui montre ce qui se passe en temps réel.
-
-#### Hook SSE — `frontend/src/hooks/useLiveFeed.ts`
-
-```ts
-import { useState, useEffect } from "react";
-
-export function useLiveFeed(backendUrl: string) {
-  const [events, setEvents] = useState<any[]>([]);
-
-  useEffect(() => {
-    const source = new EventSource(`${backendUrl}/events`);
-    source.onmessage = (e) => {
-      const event = JSON.parse(e.data);
-      setEvents((prev) => [event, ...prev].slice(0, 30));
-    };
-    return () => source.close();
-  }, [backendUrl]);
-
-  return events;
-}
-```
-
-#### Hook Stats — `frontend/src/hooks/useStats.ts`
-
-```ts
-import { useState, useEffect } from "react";
-
-export function useOnChainStats(backendUrl: string) {
-  const [stats, setStats] = useState({ seeds: "0", hits: "0", queries: "0" });
-
-  useEffect(() => {
-    const poll = async () => {
-      const res = await fetch(`${backendUrl}/api/stats`);
       const data = await res.json();
-      setStats(data);
-    };
-    poll();
-    const interval = setInterval(poll, 5000); // Poll toutes les 5s
-    return () => clearInterval(interval);
-  }, [backendUrl]);
+      setResult(data);
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  return stats;
+  return { submitQuery, result, loading };
 }
 ```
 
-### 4:15 → 5:00 — Pages
+### 2:30 → 3:30 — Pages
 
-Le dashboard a **deux pages** :
+#### `packages/nextjs/app/page.tsx` — Landing
 
-**Landing** (`/`) :
-- Hero : "Query anything. Pay for freshness."
-- 3 blocs How it works : Query → Pay (cher si premier) → Read (pas cher si déjà fait)
-- Aperçu du live feed (embedded)
-- CTA → "Launch App"
+La landing existe deja avec le shader gradient. On ajoute du contenu par dessus :
+- Hero text : "Query anything. Pay for freshness."
+- 3 blocs "How it works"
+- CTA → `/dashboard`
 
-**Dashboard** (`/app`) :
-- **Stats bar** : Seeds | Cache Hits | Total Queries (lues depuis le contrat via `/api/stats`)
-- **Search bar** : tape ta query, connecte ton wallet, envoie
-- **Result card** : montre la data + FRESH/CACHED + coût + tx hash
-- **Live feed** (colonne droite) : toutes les queries en temps réel via SSE
+#### `packages/nextjs/app/dashboard/page.tsx` — Dashboard
 
-Utiliser le composant React déjà généré (`x402-gateway-app.jsx`) comme base, et remplacer :
-- Les données mock par `useLiveFeed()` et `useOnChainStats()`
-- Le fake submit par `useFetchWithPayment()` de thirdweb
-- Les stats hardcodées par les vraies stats on-chain
+Le dashboard principal :
+- **StatsBar** : Seeds | Cache Hits | Total Queries (via `/api/stats`)
+- **SearchBar** : tape ta query, envoie
+- **ResultCard** : montre la data + FRESH/CACHED + cout + tx hash
+- **LiveFeed** (colonne droite) : toutes les queries en temps reel via SSE
 
-**✅ Checkpoint Phase 4** : le dashboard affiche les stats on-chain en temps réel et les queries live via SSE.
+Les composants scaffold existants (wallet connect, theme, header, footer) sont deja la et fonctionnent.
+
+**Checkpoint Phase 3** : le dashboard est fonctionnel avec les stats on-chain et le live feed SSE.
 
 ---
 
-## ⏱ PHASE 5 — Agents + Demo `[5:00 → 6:00]`
+## PHASE 4 — Agents + Demo `[3:30 → 4:30]`
 
-### 5:00 → 5:20 — Swarm d'agents
+### 3:30 → 3:50 — Swarm d'agents
 
 #### Fichier `agents/swarm.ts`
 
 ```ts
-import { createGatewayClient } from "../packages/sdk/src/client.js";
+// Les agents appellent directement les API routes Next.js
 
-const GATEWAY = process.env.GATEWAY_URL || "http://localhost:3001";
+const GATEWAY = process.env.GATEWAY_URL || "http://localhost:3000";
 
 const agents = [
   {
-    name: "🤖 Price-Bot",
-    key: process.env.AGENT1_KEY || process.env.BUYER_PRIVATE_KEY!,
-    queries: [
-      "ETH price", "BTC price", "SOL price",
-      "ethereum price", "bitcoin price",
-    ],
+    name: "Price-Bot",
+    queries: ["ETH price", "BTC price", "SOL price", "ethereum price", "bitcoin price"],
     delay: 3000,
   },
   {
-    name: "🌤 Weather-Bot",
-    key: process.env.AGENT2_KEY || process.env.BUYER_PRIVATE_KEY!,
-    queries: [
-      "Denver weather", "Tokyo weather", "Paris weather",
-      "London weather", "weather in Sydney",
-    ],
+    name: "Weather-Bot",
+    queries: ["Denver weather", "Tokyo weather", "Paris weather", "London weather"],
     delay: 4000,
   },
   {
-    name: "🧠 AI-Bot",
-    key: process.env.AGENT3_KEY || process.env.BUYER_PRIVATE_KEY!,
-    queries: [
-      "what is Monad", "explain x402", "define DeFi",
-      "what are micropayments", "explain blockchain",
-    ],
+    name: "AI-Bot",
+    queries: ["what is Monad", "explain x402", "define DeFi", "what are micropayments"],
     delay: 5000,
   },
 ];
 
-async function runAgent(agent: typeof agents[number]) {
-  const gw = createGatewayClient({
-    privateKey: agent.key,
-    gatewayUrl: GATEWAY,
-  });
-
-  console.log(`${agent.name} started — wallet: ${gw.getWallet().slice(0, 8)}…`);
+async function runAgent(agent: (typeof agents)[number]) {
+  console.log(`${agent.name} started`);
 
   let i = 0;
   while (true) {
@@ -1542,14 +955,19 @@ async function runAgent(agent: typeof agents[number]) {
     const start = Date.now();
 
     try {
-      const result = await gw.query(q);
+      const res = await fetch(`${GATEWAY}/api/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q }),
+      });
+      const result = await res.json();
       const ms = Date.now() - start;
-      const tag = result.cached ? "📦 CACHE" : "🔥 FRESH";
+      const tag = result.cached ? "CACHE" : "FRESH";
       console.log(
-        `${agent.name} | ${q.padEnd(20)} | ${tag} | ${result.cost.padEnd(8)} | ${ms}ms`
+        `${agent.name} | ${q.padEnd(20)} | ${tag} | ${result.cost.padEnd(8)} | ${ms}ms`,
       );
     } catch (err: any) {
-      console.log(`${agent.name} | ${q.padEnd(20)} | ❌ ${err.message}`);
+      console.log(`${agent.name} | ${q.padEnd(20)} | ERROR ${err.message}`);
     }
 
     i++;
@@ -1558,146 +976,103 @@ async function runAgent(agent: typeof agents[number]) {
   }
 }
 
-console.log("\n🚀 Agent Swarm — x402 Gateway\n");
-console.log("─".repeat(70));
+console.log("\nAgent Swarm — x402 Gateway\n");
+console.log("-".repeat(70));
 Promise.all(agents.map(runAgent));
 ```
 
 **Lancer** :
 ```bash
-npx ts-node --esm agents/swarm.ts
+npx tsx agents/swarm.ts
 ```
 
-**Output attendu :**
-```
-🚀 Agent Swarm — x402 Gateway
-
-──────────────────────────────────────────────────────────────────────
-🤖 Price-Bot started — wallet: 0xab12cd…
-🌤 Weather-Bot started — wallet: 0xab12cd…
-🧠 AI-Bot started — wallet: 0xab12cd…
-
-🤖 Price-Bot   | ETH price            | 🔥 FRESH | $0.01    | 342ms
-🌤 Weather-Bot | Denver weather       | 🔥 FRESH | $0.01    | 289ms
-🤖 Price-Bot   | BTC price            | 🔥 FRESH | $0.01    | 311ms
-🧠 AI-Bot      | what is Monad        | 🔥 FRESH | $0.01    | 1203ms
-🤖 Price-Bot   | ETH price            | 📦 CACHE | $0.0001  | 89ms    ← CACHE HIT
-🌤 Weather-Bot | Denver weather       | 📦 CACHE | $0.0001  | 67ms    ← CACHE HIT
-🌤 Weather-Bot | Tokyo weather        | 🔥 FRESH | $0.01    | 278ms
-🤖 Price-Bot   | SOL price            | 🔥 FRESH | $0.01    | 334ms
-🧠 AI-Bot      | explain x402         | 🔥 FRESH | $0.01    | 987ms
-🤖 Price-Bot   | ETH price            | 📦 CACHE | $0.0001  | 54ms    ← CACHE HIT
-```
-
-### 5:20 → 5:40 — Deploy
+### 3:50 → 4:10 — Deploy
 
 | Service | Outil | Commande |
 |---|---|---|
-| Contrats | Monad Testnet | déjà fait en Phase 1 |
-| Backend | ngrok (rapide) | `ngrok http 3001` |
-| Frontend | Vercel | `cd frontend && npx vercel` |
-| CLI | npm link local | déjà fait en Phase 3 |
+| Contrat | Monad | `yarn deploy --network monad` |
+| Frontend + API | Vercel | `yarn vercel:yolo` |
+| Agents | Terminal local | `npx tsx agents/swarm.ts` |
 
-Mettre à jour le gateway URL partout après deploy :
-```bash
-# .env
-GATEWAY_URL=https://xxxx.ngrok.io
+Apres deploy Vercel, mettre a jour `GATEWAY_URL` dans le swarm pour pointer vers l'URL Vercel.
 
-# CLI
-x402q "ETH price" --gateway https://xxxx.ngrok.io
-```
+### 4:10 → 4:30 — Script de demo
 
-### 5:40 → 6:00 — Script de démo
-
-**Setup écran :**
+**Setup ecran :**
 ```
 ┌───────────────────────────────────┬──────────────────────────┐
 │                                   │                          │
-│         Dashboard Web             │   Terminal 1 : CLI       │
+│         Dashboard Web             │   Terminal : Swarm       │
 │    (stats on-chain + live feed)   │                          │
-│                                   │   Terminal 2 : Swarm     │
 │                                   │                          │
 └───────────────────────────────────┴──────────────────────────┘
 ```
 
 **Script (3 min) :**
 
-**[0:00 – 0:30] Le problème**
-> "Les agents AI ont besoin de data — prix crypto, météo, réponses LLM. Aujourd'hui chaque API demande une clé, un compte, un abonnement. Un agent autonome ne peut pas gérer ça."
+**[0:00 - 0:30] Le probleme**
+> "Les agents AI ont besoin de data — prix crypto, meteo, reponses LLM. Aujourd'hui chaque API demande une cle, un compte, un abonnement. Un agent autonome ne peut pas gerer ca."
 
-**[0:30 – 1:00] La solution**
-> "x402 Gateway : un endpoint unique pour toutes les APIs. Le twist : la fraîcheur a un prix. Tu veux la donnée en premier ? Tu paies cher et tu la 'seedes' on-chain sur Monad. Tu arrives après ? C'est quasi gratuit, tu lis le cache."
+**[0:30 - 1:00] La solution**
+> "x402 Gateway : un endpoint unique pour toutes les APIs. Le twist : la fraicheur a un prix. Tu veux la donnee en premier ? Tu paies cher et tu la 'seedes' on-chain sur Monad. Tu arrives apres ? C'est quasi gratuit, tu lis le cache."
 
-**[1:00 – 2:00] Démo live**
+**[1:00 - 2:00] Demo live**
 
-Terminal 1 :
-```bash
-x402q "ETH price"
-```
-> "Première query. Cache miss. L'agent paie $0.01, le backend fetch CoinGecko, et le résultat est stocké on-chain dans notre contrat DataCache sur Monad."
+Ouvrir le dashboard, taper "ETH price" dans la search bar :
+> "Premiere query. Cache miss. Le backend fetch CoinGecko, et le resultat est stocke on-chain dans notre contrat DataCache sur Monad. Ca coute $0.01."
 
-*Pointer le dashboard → le seed apparaît*
+Taper "ETH price" a nouveau :
+> "Meme query, quelques secondes plus tard. Cache hit. On-chain. $0.0001. La data etait deja la, payee par le premier user."
 
-```bash
-x402q "ETH price"
-```
-> "Même query, 30 secondes plus tard. Cache hit. On-chain. $0.0001 au lieu de $0.01. La data était déjà là, payée par le premier user."
+Lancer le swarm dans le terminal :
+> "Maintenant 3 agents autonomes. Ils query en boucle. Regardez : les premieres queries sont des seeds (cher), puis les suivantes sont des cache hits (pas cher). Le reseau s'auto-optimise."
 
-*Pointer le dashboard → le cache hit apparaît*
+*Le dashboard s'anime de queries — les juges voient FRESH et CACHED alterner*
 
-Terminal 2 :
-```bash
-npx ts-node agents/swarm.ts
-```
-> "Maintenant 3 agents autonomes. Ils query en boucle. Regardez : les premières queries sont des seeds (cher), puis les suivantes sont des cache hits (pas cher). Le réseau s'auto-optimise."
+**[2:00 - 2:30] L'architecture**
+> "Tout est on-chain sur Monad. Le contrat DataCache stocke chaque resultat, track les seeders, gere le TTL. Le frontend est un Next.js avec des API routes qui servent de gateway. Les agents appellent les memes routes."
 
-*Le dashboard explose de queries — les juges voient FRESH et CACHED alterner*
-
-**[2:00 – 2:30] L'architecture**
-> "Tout est on-chain. Le contrat DataCache sur Monad stocke chaque résultat, track les seeders, gère le TTL. Le contrat AgentPool permet un budget partagé. Le SDK fait 30 lignes. Le CLI wrappe le SDK."
-
-**[2:30 – 3:00] La vision**
-> "C'est un marché de la fraîcheur. Les trading bots paient cher pour être premiers. Les dashboards arrivent après et paient rien. Plus une donnée est populaire, plus vite elle est seedée, plus vite elle devient gratuite. C'est un CDN de données payant, on-chain, sur Monad."
+**[2:30 - 3:00] La vision**
+> "C'est un marche de la fraicheur. Les trading bots paient cher pour etre premiers. Les dashboards arrivent apres et paient rien. Plus une donnee est populaire, plus vite elle est seedee, plus vite elle devient gratuite. C'est un CDN de donnees payant, on-chain, sur Monad."
 
 ---
 
-## ⚡ Matrice de Priorités
+## Matrice de Priorites
 
-### 🟢 MUST — sans ça, pas de projet
+### MUST — sans ca, pas de projet
 
-- [ ] **DataCache.sol** déployé sur Monad testnet
-- [ ] **Backend** avec au moins `/api/query` qui check le contrat + fetch API + store on-chain
-- [ ] **SDK** `createGatewayClient()` fonctionnel
-- [ ] **CLI** `x402q "ETH price"` qui marche dans un terminal
-- [ ] **1 query complète end-to-end** : cache miss → paiement → seed on-chain → cache hit → lecture on-chain
+- [ ] **DataCache.sol** deploye sur Monad
+- [ ] **API route** `/api/query` qui check le contrat + fetch API + store on-chain
+- [ ] **Dashboard** avec search bar fonctionnelle → montre FRESH/CACHED
+- [ ] **1 query complete end-to-end** : cache miss → seed on-chain → cache hit → lecture on-chain
 
-### 🟡 SHOULD — rend le projet compétitif
+### SHOULD — rend le projet competitif
 
-- [ ] **AgentPool.sol** déployé
-- [ ] **x402 middleware** avec paiements réels via thirdweb
-- [ ] **Dashboard** avec live feed SSE + stats on-chain
-- [ ] **Swarm** d'au moins 2 agents qui query en boucle
-- [ ] **Pricing différencié** visible : FRESH = cher, CACHED = pas cher
+- [ ] **x402 middleware** avec paiements reels via thirdweb
+- [ ] **Live feed SSE** sur le dashboard
+- [ ] **Stats on-chain** affichees (seeds, hits, total)
+- [ ] **Swarm** d'au moins 2 agents pour la demo
+- [ ] **Pricing differencie** visible : FRESH = cher, CACHED = pas cher
 
-### 🔵 NICE TO HAVE — wow factor
+### NICE TO HAVE — wow factor
 
-- [ ] 3+ agents avec queries variées (prix, météo, AI)
-- [ ] CLI coloré avec chalk + output FRESH/CACHED
-- [ ] `x402q stats` qui lit les stats du contrat
-- [ ] Frontend Landing Page + Dashboard
-- [ ] Dashboard montre les tx Monad en temps réel
+- [ ] 3+ agents avec queries variees (prix, meteo, AI)
+- [ ] Landing page avec le shader gradient + explications
+- [ ] `/api/stats` qui lit les stats du contrat
+- [ ] Dashboard montre les tx Monad en temps reel
+- [ ] Deploy sur Vercel
 
-### 🔴 COUPER EN PREMIER si manque de temps
+### COUPER EN PREMIER si manque de temps
 
-- AgentPool.sol (garder juste DataCache)
+- AgentPool.sol (coupe)
 - Landing Page (aller direct au dashboard)
 - Pricing dynamique x402 (mettre un prix fixe)
-- Deploy (utiliser ngrok + localhost)
-- Visualisation fancy
+- CLI separee (le dashboard remplace)
+- Deploy (rester en localhost + ngrok)
 
 ---
 
-## 🔗 Ressources
+## Ressources
 
 | Ressource | URL |
 |---|---|
@@ -1707,8 +1082,7 @@ npx ts-node agents/swarm.ts
 | Monad Faucet | https://faucet.monad.xyz |
 | Foundry Book | https://book.getfoundry.sh |
 | viem Docs | https://viem.sh |
-| Hono Framework | https://hono.dev |
-| Commander.js | https://github.com/tj/commander.js |
+| Scaffold-ETH 2 | https://docs.scaffoldeth.io |
 | CoinGecko API | https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd |
 | wttr.in API | https://wttr.in/denver?format=j1 |
 | Groq Console | https://console.groq.com |

@@ -4,6 +4,395 @@
  */
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
-const deployedContracts = {} as const;
+const deployedContracts = {
+  10143: {
+    DataCache: {
+      address: "0x8aff0f33092efe2af41c67e8e76944d0009a5fca",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "_owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "checkCache",
+          inputs: [
+            {
+              name: "queryHash",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "isCached",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "data",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "defaultTTL",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "entries",
+          inputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "data",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "query",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "seeder",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "timestamp",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "hits",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "exists",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getEntry",
+          inputs: [
+            {
+              name: "queryHash",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "data",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "query",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "seeder",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "timestamp",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "hits",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "isExpired",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getResult",
+          inputs: [
+            {
+              name: "queryHash",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "data",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "seeder",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "timestamp",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "hits",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getStats",
+          inputs: [],
+          outputs: [
+            {
+              name: "seeds",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "hits",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "queries",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "recordHits",
+          inputs: [
+            {
+              name: "queryHash",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "count",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "setTTL",
+          inputs: [
+            {
+              name: "newTTL",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "storeResult",
+          inputs: [
+            {
+              name: "queryHash",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "query",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "data",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "seeder",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "totalHits",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "totalQueries",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "totalSeeds",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "CacheHit",
+          inputs: [
+            {
+              name: "queryHash",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "reader",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "totalHits",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "DataSeeded",
+          inputs: [
+            {
+              name: "queryHash",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "query",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "seeder",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "data",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "timestamp",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 13471696,
+    },
+  },
+} as const;
 
 export default deployedContracts satisfies GenericContractsDeclaration;
