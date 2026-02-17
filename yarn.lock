@@ -3285,6 +3285,7 @@ __metadata:
     "@scaffold-ui/debug-contracts": ^0.1.7
     "@scaffold-ui/hooks": ^0.1.6
     "@shadergradient/react": ^2.4.20
+    "@tabler/icons-react": ^3.36.1
     "@tailwindcss/postcss": 4.0.15
     "@tanstack/react-query": ~5.59.15
     "@trivago/prettier-plugin-sort-imports": ~4.3.0
@@ -3296,11 +3297,13 @@ __metadata:
     bgipfs: ~0.0.12
     blo: ~1.2.0
     burner-connector: 0.0.20
+    clsx: ^2.1.1
     daisyui: 5.0.9
     eslint: ~9.23.0
     eslint-config-next: ~15.2.3
     eslint-config-prettier: ~10.1.1
     eslint-plugin-prettier: ~5.2.4
+    framer-motion: ^12.34.1
     gsap: ^3.14.2
     kubo-rpc-client: ~5.0.2
     next: ~15.2.8
@@ -3312,6 +3315,7 @@ __metadata:
     react: ~19.2.3
     react-dom: ~19.2.3
     react-hot-toast: ~2.4.0
+    tailwind-merge: ^3.4.1
     tailwindcss: 4.1.3
     three: ^0.182.0
     type-fest: ~4.26.1
@@ -4240,6 +4244,24 @@ __metadata:
   dependencies:
     tslib: ^2.8.0
   checksum: 1dc1e5ce42ca0687ebbff4b00efb49fa813886e819fcd440329f1d14e76a988df738cff63f113c271a340c7b6a6534dba711103021c4a1e1d277bccb33a1d732
+  languageName: node
+  linkType: hard
+
+"@tabler/icons-react@npm:^3.36.1":
+  version: 3.36.1
+  resolution: "@tabler/icons-react@npm:3.36.1"
+  dependencies:
+    "@tabler/icons": ""
+  peerDependencies:
+    react: ">= 16"
+  checksum: fe82a076e30fb4732065e4a78bd5b646e129b36338093b231fd3a7db1114f45a7e9b22f68fac76aa6f7e6af6e553327f94141ecf456d836998a9f312b581a095
+  languageName: node
+  linkType: hard
+
+"@tabler/icons@npm:":
+  version: 3.36.1
+  resolution: "@tabler/icons@npm:3.36.1"
+  checksum: 4ad7fdb8c4f2829f6d1a7bc2c22ffb75b88ea27179184c7585c6d7ac19eba1818f8ec56646e88ee1996e43fcfe86ac08360f868812b4c51d70fb4c95c64f3be9
   languageName: node
   linkType: hard
 
@@ -6961,7 +6983,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"clsx@npm:2.1.1":
+"clsx@npm:2.1.1, clsx@npm:^2.1.1":
   version: 2.1.1
   resolution: "clsx@npm:2.1.1"
   checksum: acd3e1ab9d8a433ecb3cc2f6a05ab95fe50b4a3cfc5ba47abb6cbf3754585fcb87b84e90c822a1f256c4198e3b41c7f6c391577ffc8678ad587fc0976b24fd57
@@ -9000,6 +9022,28 @@ __metadata:
   version: 5.3.4
   resolution: "fraction.js@npm:5.3.4"
   checksum: 6ac88ecfdb5fabe3566ae30f79828d448288efbb852cd43ad83afc961fb6923e1d77bc65fbcba8ccda10894114edd419581a050c73d61e368fdd4c3ff416a65a
+  languageName: node
+  linkType: hard
+
+"framer-motion@npm:^12.34.1":
+  version: 12.34.1
+  resolution: "framer-motion@npm:12.34.1"
+  dependencies:
+    motion-dom: ^12.34.1
+    motion-utils: ^12.29.2
+    tslib: ^2.4.0
+  peerDependencies:
+    "@emotion/is-prop-valid": "*"
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@emotion/is-prop-valid":
+      optional: true
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 3babbc1a4e884a3da45cee40a4b8a42205efdb81e8f408f97a794419f3e98f6dd6daf8e15be974408e5e1aadd62d037bb63d2a51b4cf2f297a9e863377d27af0
   languageName: node
   linkType: hard
 
@@ -11733,6 +11777,22 @@ __metadata:
   version: 1.1.0
   resolution: "modern-ahocorasick@npm:1.1.0"
   checksum: 78b99840c9af086c1e36a594ee85bebd8c19d48e2ef31a67d1bad0e673ac12fc931e5961abb5b16daaf820af4923e700f76b1793b7413e18782230162866a0af
+  languageName: node
+  linkType: hard
+
+"motion-dom@npm:^12.34.1":
+  version: 12.34.1
+  resolution: "motion-dom@npm:12.34.1"
+  dependencies:
+    motion-utils: ^12.29.2
+  checksum: 07d6643e30ebe8052e295c6289c9ca8920598054ba67cb81000c9f9d79c8b201c5b34bd42a43256afb4b1e539d83857de4235f24ac772cc6f7d8fc39d3a47cda
+  languageName: node
+  linkType: hard
+
+"motion-utils@npm:^12.29.2":
+  version: 12.29.2
+  resolution: "motion-utils@npm:12.29.2"
+  checksum: 68a44a62dffd9d64e468a586be35f25a26cc0e51664ec97c54cdde208001cd5ff2e351e2e794bde47c9840ddd2c2573f2036e4905588a113697b3f512b8fb891
   languageName: node
   linkType: hard
 
@@ -14941,6 +15001,13 @@ __metadata:
   dependencies:
     "@pkgr/core": ^0.2.9
   checksum: a53fb563d01ba8912a111b883fc3c701e267896ff8273e7aba9001f5f74711e125888f4039e93060795cd416122cf492ae419eb10a6a3e3b00e830917669d2cf
+  languageName: node
+  linkType: hard
+
+"tailwind-merge@npm:^3.4.1":
+  version: 3.4.1
+  resolution: "tailwind-merge@npm:3.4.1"
+  checksum: 3c9c7b8b21b5195b482dcb4d31d3d8616f9f205375843612bbd7dafb20dcbe50a3de846e160c6dc58159b8ae9e8876068d1bf08bf3f513e0912053c5e55dfd5e
   languageName: node
   linkType: hard
 
