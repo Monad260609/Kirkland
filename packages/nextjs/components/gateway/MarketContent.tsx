@@ -1,64 +1,115 @@
 "use client";
 
-import React from "react";
-import { IconCurrencyEthereum } from "@tabler/icons-react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { IconChevronDown, IconCloud, IconCoin, IconWorld } from "@tabler/icons-react";
 import { motion } from "framer-motion";
+import { HoverEffect } from "~~/components/ui/card-hover-effect";
 
-interface ApiEntry {
-  name: string;
+/* ── data ── */
+
+interface CategoryData {
+  title: string;
   description: string;
-  refreshRate: string;
   icon: React.ReactNode;
-  category: string;
+  options: string[];
+  catKey: string;
 }
 
-const MOCK_APIS: ApiEntry[] = [
+const CATEGORIES: CategoryData[] = [
   {
-    name: "ETH / USD",
-    description: "Ethereum price feed from CoinGecko",
-    refreshRate: "~0.1s",
-    icon: <IconCurrencyEthereum className="h-5 w-5" />,
-    category: "Crypto",
+    title: "Prix Crypto (CoinGecko)",
+    description: "Real-time token prices via CoinGecko API",
+    icon: <IconCoin className="h-6 w-6" />,
+    options: ["eth", "btc", "sol", "matic", "avax", "dot", "ada", "mon"],
+    catKey: "crypto",
+  },
+  {
+    title: "Meteo (wttr.in)",
+    description: "Weather data for any city worldwide",
+    icon: <IconCloud className="h-6 w-6" />,
+    options: ["Denver weather", "weather in Paris", "meteo Tokyo", "London forecast", "New York weather"],
+    catKey: "meteo",
+  },
+  {
+    title: "Info Pays (REST Countries)",
+    description: "Country data: population, area, capital…",
+    icon: <IconWorld className="h-6 w-6" />,
+    options: ["France info", "Japan country", "Brazil population", "USA details", "Germany info"],
+    catKey: "countries",
   },
 ];
 
+/* ── dropdown ── */
+
+function MetricDropdown({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: string[];
+  selected: string;
+  onSelect: (v: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={selected}
+        onChange={e => onSelect(e.target.value)}
+        className="w-full appearance-none px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm hover:bg-white/15 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/30 pr-8"
+        style={{ WebkitAppearance: "none" }}
+      >
+        {options.map(opt => (
+          <option key={opt} value={opt} className="bg-neutral-900 text-white">
+            {opt}
+          </option>
+        ))}
+      </select>
+      <IconChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60 pointer-events-none" />
+    </div>
+  );
+}
+
+/* ── main ── */
+
 export function MarketContent() {
+  const router = useRouter();
+  const [selections, setSelections] = useState<Record<number, string>>(
+    Object.fromEntries(CATEGORIES.map((cat, i) => [i, cat.options[0]])),
+  );
+
+  const hoverItems = CATEGORIES.map((cat, i) => ({
+    title: cat.title,
+    description: cat.description,
+    icon: cat.icon,
+    children: (
+      <div className="space-y-3">
+        <MetricDropdown
+          options={cat.options}
+          selected={selections[i]}
+          onSelect={v => setSelections(prev => ({ ...prev, [i]: v }))}
+        />
+        <button
+          onClick={() =>
+            router.push(`/market/result?cat=${encodeURIComponent(cat.catKey)}&q=${encodeURIComponent(selections[i])}`)
+          }
+          className="w-full px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-sm font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all"
+        >
+          Request API →
+        </button>
+      </div>
+    ),
+  }));
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="w-full max-w-3xl mx-auto"
+      className="w-full max-w-5xl mx-auto"
     >
-      <div className="grid gap-3">
-        {MOCK_APIS.map((api, idx) => (
-          <motion.div
-            key={api.name}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.05, duration: 0.3 }}
-            className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md hover:bg-white/15 transition-all group cursor-target"
-          >
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white group-hover:text-white transition-colors">
-              {api.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-white font-semibold text-lg">{api.name}</span>
-                <span className="text-sm px-2 py-0.5 rounded-full bg-white/10 text-white/60 uppercase tracking-wider">
-                  {api.category}
-                </span>
-              </div>
-              <p className="text-white/60 text-base mt-0.5 truncate">{api.description}</p>
-            </div>
-            <div className="text-right shrink-0">
-              <div className="text-white/70 text-base">refresh</div>
-              <div className="text-white font-mono text-lg">{api.refreshRate}</div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+      <HoverEffect items={hoverItems} />
     </motion.div>
   );
 }
