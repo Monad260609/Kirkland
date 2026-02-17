@@ -13,19 +13,39 @@ export async function verifyPayment(txHash: string, expectedPrice: string) {
   const serverWallet = process.env.SERVER_WALLET?.toLowerCase();
   if (!serverWallet) throw new Error("SERVER_WALLET not set");
 
-  const receipt = await publicClient.getTransactionReceipt({
-    hash: txHash as `0x${string}`,
-  });
+  // Retry on 429 — the RPC may rate-limit us after the user's payment tx
+  const maxRetries = 4;
+  const baseDelay = 600;
 
-  if (receipt.status !== "success") {
+  let receipt;
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+      break;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if ((!msg.includes("429") && !msg.includes("Too Many Requests")) || i === maxRetries) throw err;
+      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
+    }
+  }
+
+  if (!receipt || receipt.status !== "success") {
     return { ok: false as const, reason: "Transaction failed" };
   }
 
-  const tx = await publicClient.getTransaction({
-    hash: txHash as `0x${string}`,
-  });
+  let tx;
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      tx = await publicClient.getTransaction({ hash: txHash as `0x${string}` });
+      break;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if ((!msg.includes("429") && !msg.includes("Too Many Requests")) || i === maxRetries) throw err;
+      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
+    }
+  }
 
-  if (tx.to?.toLowerCase() !== serverWallet) {
+  if (!tx || tx.to?.toLowerCase() !== serverWallet) {
     return { ok: false as const, reason: "Wrong recipient" };
   }
 

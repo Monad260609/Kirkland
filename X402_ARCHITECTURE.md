@@ -1,0 +1,207 @@
+# Cachemarket — x402 Data Freshness Marketplace
+
+## Overview
+
+Cachemarket is a pay-per-call API gateway built on **Monad testnet**. It uses the HTTP 402 protocol to monetize API access, where the **first caller pays more** (cache miss) and **subsequent callers pay less** (cache hit) within a 60-second TTL window. All data is stored on-chain via the `DataCache` smart contract.
+
+## Architecture
+
+```
+┌──────────┐         ┌──────────────┐         ┌─────────────┐
+│  Client   │◄──402──│  Next.js API │◄──view──│  DataCache  │
+│  (wagmi)  │──MON──►│  /api/query  │──store─►│  (Monad)    │
+└──────────┘         └──────┬───────┘         └─────────────┘
+                            │
+                     ┌──────┴───────┐
+                     │ External APIs │
+                     │ CoinGecko    │
+                     │ wttr.in      │
+                     │ RESTCountries│
+                     └──────────────┘
+```
+
+## Payment Flow (x402)
+
+### Cache MISS — First caller, pays 0.001 MON
+
+1. Client sends `POST /api/query` with `{ "query": "ETH price" }`
+2. Server checks `DataCache.checkCache(hash)` on Monad → not cached
+3. Server returns **402 Payment Required** with `{ price: "0.001 MON", payTo: SERVER_WALLET }`
+4. Client sends **0.001 MON** to `SERVER_WALLET` via `sendTransaction`
+5. Client retries with header `X-PAYMENT: <txHash>`
+6. Server verifies tx on-chain (recipient, amount, status)
+7. Server fetches external API (CoinGecko/wttr.in/RESTCountries)
+8. Server stores result on-chain via `DataCache.storeResult()`
+9. Returns data to client
+
+### Cache HIT — Subsequent callers, pays 0.0001 MON
+
+1. Client sends `POST /api/query` with `{ "query": "ETH price" }`
+2. Server checks `DataCache.checkCache(hash)` → cached (< 60s TTL)
+3. Server returns **402 Payment Required** with `{ price: "0.0001 MON", cached: true }`
+4. Client sends **0.0001 MON** (10x cheaper)
+5. Client retries with `X-PAYMENT: <txHash>`
+6. Server verifies tx, returns cached data from on-chain
+
+## Smart Contract — DataCache
+
+- **Address**: `0x8aff0f33092efe2af41c67e8e76944d0009a5fca`
+- **Chain**: Monad Testnet (ID: 10143)
+- **TTL**: 60 seconds (configurable by owner)
+
+### Functions
+
+| Function | Type | Description |
+|---|---|---|
+| `checkCache(bytes32 queryHash)` | view | Returns `(isCached, data)` — checks if data exists and is not expired |
+| `storeResult(bytes32, string, string, address)` | write | Stores query result on-chain (onlyOwner) |
+| `getResult(bytes32 queryHash)` | view | Returns `(data, seeder, timestamp, hits)` |
+| `getEntry(bytes32 queryHash)` | view | Full entry details including `isExpired` |
+| `recordHits(bytes32, uint256)` | write | Batch increment hit counter (onlyOwner) |
+| `getStats()` | view | Returns `(totalSeeds, totalHits, totalQueries)` |
+| `setTTL(uint256)` | write | Change cache TTL (onlyOwner) |
+
+### Events
+
+- `DataSeeded(queryHash, query, seeder, data, timestamp)` — emitted on cache miss store
+- `CacheHit(queryHash, reader, totalHits)` — emitted on hit recording
+
+## API Endpoints
+
+### `POST /api/query`
+
+Main endpoint. Accepts a natural language query, detects intent, checks cache, handles payment.
+
+**Request:**
+```json
+{
+  "query": "ETH price"
+}
+```
+
+**Headers:**
+- `X-PAYMENT: <txHash>` — MON payment proof (required)
+
+**Response (cache miss):**
+```json
+{
+  "query": "ETH price",
+  "intent": "price",
+  "data": { "usd": 1997.67, "usd_24h_change": 0.356 },
+  "cached": false,
+  "cost": "0.001 MON",
+  "seeder": "0xCFf44...",
+  "txHash": "0xfa7c...",
+  "explorerUrl": "https://testnet.monadexplorer.com/tx/0xfa7c...",
+  "source": "price",
+  "timestamp": 1771368934586
+}
+```
+
+**Response (cache hit):**
+```json
+{
+  "query": "ETH price",
+  "intent": "price",
+  "data": { "usd": 1997.67, "usd_24h_change": 0.356 },
+  "cached": true,
+  "cost": "0.0001 MON",
+  "source": "on-chain cache",
+  "timestamp": 1771368955059
+}
+```
+
+### `GET /api/stats`
+
+Returns global on-chain stats from `DataCache.getStats()`.
+
+```json
+{
+  "seeds": "5",
+  "hits": "0",
+  "queries": "5"
+}
+```
+
+### `GET /api/events`
+
+SSE (Server-Sent Events) live feed of all queries and cache hits.
+
+### `GET /api/tx-status?hash=0x...`
+
+Check if a MON payment transaction is confirmed on Monad.
+
+```json
+{ "confirmed": true }
+```
+
+## Available Queries
+
+### 1. Crypto Prices (CoinGecko)
+
+| Query | Token ID |
+|---|---|
+| `"ETH price"`, `"ethereum"` | ethereum |
+| `"BTC price"`, `"bitcoin"` | bitcoin |
+| `"SOL price"`, `"solana"` | solana |
+| `"MATIC price"` | matic-network |
+| `"AVAX price"` | avalanche-2 |
+| `"DOT price"` | polkadot |
+| `"ADA price"` | cardano |
+| `"MON price"`, `"monad"` | monad |
+
+### 2. Weather (wttr.in)
+
+| Query | City |
+|---|---|
+| `"weather Denver"` | Denver |
+| `"Denver weather"` | Denver |
+| `"meteo Paris"` | Paris |
+| `"temperature Tokyo"` | Tokyo |
+| `"forecast London"` | London |
+
+### 3. Country Info (REST Countries)
+
+| Query | Country |
+|---|---|
+| `"France info"` | France |
+| `"info on Germany"` | Germany |
+| `"Japan country"` | Japan |
+| `"Brazil population"` | Brazil |
+| `"capital of Spain"` | Spain |
+
+**Fallback**: Any query that doesn't match weather or country patterns is treated as a crypto price lookup.
+
+## Key Files
+
+| File | Description |
+|---|---|
+| `packages/nextjs/app/api/query/route.ts` | Main API route — cache check, payment verification, fetch + store |
+| `packages/nextjs/app/api/stats/route.ts` | On-chain stats endpoint |
+| `packages/nextjs/app/api/events/route.ts` | SSE live feed |
+| `packages/nextjs/app/api/tx-status/route.ts` | Transaction confirmation check |
+| `packages/nextjs/utils/gateway/x402.ts` | Payment verification (checks MON tx on Monad) |
+| `packages/nextjs/utils/gateway/chain.ts` | Viem clients, contract interactions |
+| `packages/nextjs/utils/gateway/detect.ts` | Intent detection (price/weather/country) |
+| `packages/nextjs/utils/gateway/fetchers.ts` | External API fetchers |
+| `packages/nextjs/utils/gateway/events.ts` | SSE event system |
+| `packages/nextjs/hooks/gateway/useGatewayQuery.ts` | React hook for full x402 flow |
+| `packages/foundry/contracts/DataCache.sol` | On-chain cache smart contract |
+
+## Environment Variables
+
+```env
+BACKEND_PRIVATE_KEY=0x...              # DataCache contract owner private key
+DATACACHE_ADDRESS=0x8aff...5fca        # DataCache contract address
+SERVER_WALLET=0x...                    # Wallet that receives MON payments
+NEXT_PUBLIC_SERVER_WALLET=0x...        # Same, exposed to client
+GROQ_API_KEY=                          # Optional, for AI queries
+```
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, wagmi, RainbowKit, Framer Motion
+- **Smart Contract**: Solidity 0.8.20, Foundry
+- **Blockchain**: Monad Testnet (chain ID 10143)
+- **On-chain interaction**: viem
+- **External APIs**: CoinGecko, wttr.in, REST Countries
