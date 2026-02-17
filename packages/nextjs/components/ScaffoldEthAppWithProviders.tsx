@@ -23,11 +23,26 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
     <>
       <div className="flex flex-col min-h-screen">
         {!isConnectPage && (
-          <div className="fixed top-0 right-0 z-20 p-4">
+          <div className="fixed top-0 right-0 z-20 p-4 flex items-center gap-3">
+            <Link
+              href="/how-it-works"
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/70 hover:bg-white/10 backdrop-blur-sm transition-all text-sm"
+            >
+              How It Works
+            </Link>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-xl text-purple-200 hover:bg-purple-500/30 backdrop-blur-sm transition-all text-sm"
+            >
+              Dashboard
+            </Link>
             {isConnected ? (
               <RainbowKitCustomConnectButton />
             ) : (
-              <Link href="/connect" className="btn btn-primary btn-sm">
+              <Link
+                href="/connect"
+                className="px-4 py-2 bg-white/10 border border-white/15 rounded-xl text-white hover:bg-white/20 backdrop-blur-sm transition-all text-sm"
+              >
                 Connect Wallet
               </Link>
             )}
