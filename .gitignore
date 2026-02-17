@@ -41,6 +41,8 @@ packages/foundry/foundry.lock
 
 # claude / AI
 .claude
+AGENTS.md
+CLAUDE.md
 
 # mcp
 .mcp.json
