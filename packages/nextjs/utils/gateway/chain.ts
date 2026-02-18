@@ -2,6 +2,20 @@ import { createPublicClient, createWalletClient, http, keccak256, toHex } from "
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "~~/scaffold.config";
 
+async function withRetry<T>(fn: () => Promise<T>, retries = 4, baseDelay = 600): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      const isRateLimit = msg.includes("429") || msg.includes("Too Many Requests");
+      if (!isRateLimit || i === retries) throw err;
+      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
+    }
+  }
+  throw new Error("Unreachable");
+}
+
 const DATACACHE_ABI = [
   {
     name: "checkCache",
@@ -81,30 +95,36 @@ export function hashQuery(query: string): `0x${string}` {
 }
 
 export async function checkOnChainCache(queryHash: `0x${string}`) {
-  const result = await publicClient.readContract({
-    address: getCacheAddress(),
-    abi: DATACACHE_ABI,
-    functionName: "checkCache",
-    args: [queryHash],
+  return withRetry(async () => {
+    const result = await publicClient.readContract({
+      address: getCacheAddress(),
+      abi: DATACACHE_ABI,
+      functionName: "checkCache",
+      args: [queryHash],
+    });
+    return { isCached: result[0], data: result[1] };
   });
-  return { isCached: result[0], data: result[1] };
 }
 
 export async function storeResultOnChain(queryHash: `0x${string}`, query: string, data: string, seeder: string) {
-  const txHash = await getWalletClient().writeContract({
-    address: getCacheAddress(),
-    abi: DATACACHE_ABI,
-    functionName: "storeResult",
-    args: [queryHash, query, data, seeder as `0x${string}`],
+  return withRetry(async () => {
+    const txHash = await getWalletClient().writeContract({
+      address: getCacheAddress(),
+      abi: DATACACHE_ABI,
+      functionName: "storeResult",
+      args: [queryHash, query, data, seeder as `0x${string}`],
+    });
+    return txHash;
   });
-  return txHash;
 }
 
 export async function getOnChainStats() {
-  const result = await publicClient.readContract({
-    address: getCacheAddress(),
-    abi: DATACACHE_ABI,
-    functionName: "getStats",
+  return withRetry(async () => {
+    const result = await publicClient.readContract({
+      address: getCacheAddress(),
+      abi: DATACACHE_ABI,
+      functionName: "getStats",
+    });
+    return { seeds: result[0], hits: result[1], queries: result[2] };
   });
-  return { seeds: result[0], hits: result[1], queries: result[2] };
 }
