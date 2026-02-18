@@ -130,7 +130,7 @@ export default function MarketResultPage() {
           className="text-4xl md:text-5xl text-white tracking-wider mb-2"
         >
           {category === "crypto" && `${query.toUpperCase()} / USD`}
-          {category === "meteo" && query}
+          {category === "weather" && query}
           {category === "countries" && query}
         </motion.h1>
         <p className="text-white/50 text-base mb-8">via x402 Gateway on Monad</p>
@@ -216,7 +216,7 @@ export default function MarketResultPage() {
           >
             <PaymentInfoBanner result={result} />
             {category === "crypto" && <CryptoResult data={result.data} token={query} />}
-            {category === "meteo" && <MeteoResult data={result.data} />}
+            {category === "weather" && <WeatherResult data={result.data} />}
             {category === "countries" && <CountriesResult data={result.data} />}
           </motion.div>
         )}
@@ -286,8 +286,8 @@ function CryptoResult({ data, token }: { data: Record<string, unknown>; token: s
   );
 }
 
-/* ── Meteo ── */
-function MeteoResult({ data }: { data: Record<string, unknown> }) {
+/* ── Weather ── */
+function WeatherResult({ data }: { data: Record<string, unknown> }) {
   // Gateway normalized format: { temperature, condition, humidity, feelsLike, wind }
   const hasFields = data.temperature !== undefined || data.condition !== undefined;
 
@@ -296,11 +296,11 @@ function MeteoResult({ data }: { data: Record<string, unknown> }) {
   }
 
   const items = [
-    { label: "Temperature", value: `${data.temperature ?? "—"}°C` },
+    { label: "Temperature", value: `${data.temperature ?? "—"}°F` },
     { label: "Condition", value: String(data.condition ?? "—") },
     { label: "Humidity", value: `${data.humidity ?? "—"}%` },
-    { label: "Feels Like", value: `${data.feelsLike ?? "—"}°C` },
-    { label: "Wind", value: `${data.wind ?? "—"} km/h` },
+    { label: "Feels Like", value: `${data.feelsLike ?? "—"}°F` },
+    { label: "Wind", value: `${data.wind ?? "—"} mph` },
   ];
 
   return (

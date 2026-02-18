@@ -26,7 +26,7 @@ function summarizeData(intent: string, data: Record<string, unknown>): string {
     return usd !== undefined ? `$${usd.toLocaleString()}` : JSON.stringify(data);
   }
   if (intent === "weather") {
-    return `${data.temperature ?? "?"}°C — ${data.condition ?? "?"}`;
+    return `${data.temperature ?? "?"}°F — ${data.condition ?? "?"}`;
   }
   if (intent === "country") {
     return `${data.name ?? "?"} · pop. ${typeof data.population === "number" ? data.population.toLocaleString() : "?"}`;

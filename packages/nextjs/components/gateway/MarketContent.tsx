@@ -18,21 +18,21 @@ interface CategoryData {
 
 const CATEGORIES: CategoryData[] = [
   {
-    title: "Prix Crypto (CoinGecko)",
+    title: "Crypto Prices (CoinGecko)",
     description: "Real-time token prices via CoinGecko API",
     icon: <IconCoin className="h-6 w-6" />,
     options: ["eth", "btc", "sol", "matic", "avax", "dot", "ada", "mon"],
     catKey: "crypto",
   },
   {
-    title: "Meteo (wttr.in)",
+    title: "Weather (wttr.in)",
     description: "Weather data for any city worldwide",
     icon: <IconCloud className="h-6 w-6" />,
-    options: ["Denver weather", "weather in Paris", "meteo Tokyo", "London forecast", "New York weather"],
-    catKey: "meteo",
+    options: ["Denver weather", "weather in Paris", "Tokyo forecast", "London forecast", "New York weather"],
+    catKey: "weather",
   },
   {
-    title: "Info Pays (REST Countries)",
+    title: "Country Info (REST Countries)",
     description: "Country data: population, area, capital…",
     icon: <IconWorld className="h-6 w-6" />,
     options: ["France info", "Japan country", "Brazil population", "USA details", "Germany info"],

@@ -1,13 +1,13 @@
 import { publicClient } from "./chain";
 import { parseEther } from "viem";
 
-// Cache MISS = premier a fetcher, paye cher
-// Cache HIT = data deja on-chain, paye moins cher
+// Cache MISS = first to fetch, pays full price
+// Cache HIT = data already on-chain, pays less
 export const PRICE_CACHE_MISS = "0.001"; // 0.001 MON
 export const PRICE_CACHE_HIT = "0.0001"; // 0.0001 MON
 
 /**
- * Verifie qu'un tx hash correspond a un paiement MON valide vers SERVER_WALLET.
+ * Verifies that a tx hash corresponds to a valid MON payment to SERVER_WALLET.
  */
 export async function verifyPayment(txHash: string, expectedPrice: string) {
   const serverWallet = process.env.SERVER_WALLET?.toLowerCase();
@@ -58,7 +58,7 @@ export async function verifyPayment(txHash: string, expectedPrice: string) {
 }
 
 /**
- * Retourne le body 402 avec le prix adapte (miss ou hit).
+ * Returns the 402 response body with the appropriate price (miss or hit).
  */
 export function paymentRequiredResponse(isCached: boolean) {
   const price = isCached ? PRICE_CACHE_HIT : PRICE_CACHE_MISS;

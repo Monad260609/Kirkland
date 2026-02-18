@@ -16,11 +16,11 @@ export async function fetchWeather(city: string): Promise<string> {
   const cur = json.current_condition?.[0];
   if (!cur) return JSON.stringify({ error: `City "${city}" not found` });
   return JSON.stringify({
-    temperature: cur.temp_C,
+    temperature: cur.temp_F,
     condition: cur.weatherDesc?.[0]?.value,
     humidity: cur.humidity,
-    feelsLike: cur.FeelsLikeC,
-    wind: cur.windspeedKmph,
+    feelsLike: cur.FeelsLikeF,
+    wind: cur.windspeedMiles,
   });
 }
 

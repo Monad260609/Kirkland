@@ -19,14 +19,14 @@ export async function POST(req: NextRequest) {
     // ── Check on-chain cache ──────────────────────────────
     const { isCached, data: cachedData } = await checkOnChainCache(qHash);
 
-    // ── Paiement requis dans tous les cas ─────────────────
+    // ── Payment required in all cases ─────────────────
     const paymentTxHash = req.headers.get("X-PAYMENT");
 
     if (!paymentTxHash) {
       return NextResponse.json(paymentRequiredResponse(isCached), { status: 402 });
     }
 
-    // Verifier le paiement avec le bon prix
+    // Verify the payment with the correct price
     const expectedPrice = isCached ? PRICE_CACHE_HIT : PRICE_CACHE_MISS;
     const payment = await verifyPayment(paymentTxHash, expectedPrice);
     if (!payment.ok) {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const payer = payment.payer;
 
     // ══════════════════════════════════════════════════════
-    //  CACHE HIT — 0.0001 MON (10x moins cher)
+    //  CACHE HIT — 0.0001 MON (10x cheaper)
     // ══════════════════════════════════════════════════════
     if (isCached) {
       emitEvent({
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ══════════════════════════════════════════════════════
-    //  CACHE MISS — 0.001 MON (premier a payer)
+    //  CACHE MISS — 0.001 MON (first to pay)
     // ══════════════════════════════════════════════════════
     const freshData = await fetchFromSource(intent.type, intent.param);
     const txHash = await storeResultOnChain(qHash, input, freshData, payer);
