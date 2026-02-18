@@ -22,7 +22,7 @@ export const monadTestnet = defineChain({
     decimals: 18,
   },
   rpcUrls: {
-    default: { http: ["https://testnet-rpc.monad.xyz"] },
+    default: { http: [process.env.MONAD_RPC_URL ?? "https://testnet-rpc.monad.xyz"] },
   },
   blockExplorers: {
     default: {
