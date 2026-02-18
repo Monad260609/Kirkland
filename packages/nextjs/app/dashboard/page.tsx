@@ -104,6 +104,12 @@ const Dashboard: NextPage = () => {
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="flex items-end justify-center px-6 pb-6 pt-4 pointer-events-auto">
           <FloatingDock items={dockItems} />
+          <Link
+            href="/about"
+            className="absolute right-6 bottom-5 px-4 py-2 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md text-white/70 text-base tracking-wide cursor-pointer hover:bg-white/15 hover:text-white transition-all"
+          >
+            About us
+          </Link>
         </div>
       </div>
     </>

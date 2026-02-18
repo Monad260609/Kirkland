@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
-import { IconArrowRight, IconBolt, IconCode, IconTerminal2 } from "@tabler/icons-react";
+import { IconArrowUpRight, IconCode, IconTerminal2 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import type { NextPage } from "next";
 import { Terminal } from "~~/components/ui/terminal";
@@ -59,6 +59,8 @@ function LiveStats() {
 
 /* ─── Main Landing ─── */
 const Home: NextPage = () => {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <>
       <ShaderGradientCanvas
@@ -139,17 +141,21 @@ const Home: NextPage = () => {
           >
             <Link
               href="/dashboard"
-              className="cursor-target flex items-center gap-2 px-6 py-3 bg-purple-500/20 border border-purple-500/30 rounded-xl text-purple-200 hover:bg-purple-500/30 backdrop-blur-sm transition-all font-medium"
+              target="_blank"
+              rel="noopener noreferrer"
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-[#f5f0e8] text-[#1a1a2e] text-lg font-bold tracking-wide hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              <IconBolt className="h-5 w-5" />
-              Launch App
-            </Link>
-            <Link
-              href="/how-it-works"
-              className="cursor-target flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white/90 hover:bg-white/10 backdrop-blur-sm transition-all font-medium"
-            >
-              Learn More
-              <IconArrowRight className="h-4 w-4" />
+              <span>Launch App</span>
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={hovered ? { opacity: 1, width: "auto" } : { opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <IconArrowUpRight className="h-5 w-5" />
+              </motion.span>
             </Link>
           </motion.div>
         </section>
@@ -293,6 +299,18 @@ const Home: NextPage = () => {
             <span className="text-white/80 font-medium">x402 Protocol</span>
           </p>
         </motion.div>
+      </div>
+
+      {/* About us */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+        <div className="flex justify-end px-6 pb-6 pt-4">
+          <Link
+            href="/about"
+            className="pointer-events-auto px-4 py-2 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md text-white/70 text-base tracking-wide cursor-pointer hover:bg-white/15 hover:text-white transition-all"
+          >
+            About us
+          </Link>
+        </div>
       </div>
     </>
   );
