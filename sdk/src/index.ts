@@ -1,0 +1,17 @@
+// Main client
+export { CacheMarket } from "./client.js";
+
+// Types
+export type {
+  CacheMarketConfig,
+  QueryResult,
+  CacheCheckResult,
+  CacheStats,
+  IntentType,
+  Intent,
+} from "./types.js";
+
+// Utilities (for advanced usage)
+export { detectIntent } from "./detect.js";
+export { fetchExternal } from "./fetchers.js";
+export { hashQuery, CACHE_ADDRESS, MONAD_TESTNET, EXPLORER_TX } from "./chain.js";
