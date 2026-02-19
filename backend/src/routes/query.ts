@@ -11,7 +11,7 @@ const query = new Hono();
 
 query.post("/", async (c) => {
   // ══════════════════════════════════════════════════════
-  //  RECUPERER LA QUERY
+  //  GET THE QUERY
   // ══════════════════════════════════════════════════════
 
   const body = c.get("parsedBody") || (await c.req.json());
@@ -19,20 +19,20 @@ query.post("/", async (c) => {
 
   if (!input) return c.json({ error: "Missing 'query' in body" }, 400);
 
-  // Adresse du payer (extraite du header x402 par le middleware)
+  // Payer address (extracted from x402 header by the middleware)
   const payer =
     c.req.header("x-payer") ||
     "0x0000000000000000000000000000000000000000";
 
   // ══════════════════════════════════════════════════════
-  //  HASHER LA QUERY
+  //  HASH THE QUERY
   // ══════════════════════════════════════════════════════
 
   const queryHash =
     (c.get("queryHash") as `0x${string}`) || hashQuery(input);
 
   // ══════════════════════════════════════════════════════
-  //  CHECK LE CONTRAT ON-CHAIN
+  //  CHECK THE ON-CHAIN CONTRACT
   // ══════════════════════════════════════════════════════
 
   const isCached = c.get("isCached") as boolean | undefined;
@@ -49,17 +49,17 @@ query.post("/", async (c) => {
   }
 
   // ══════════════════════════════════════════════════════
-  //  CAS 1 : CACHE HIT — data on-chain, pas expiree
-  //  Cout : $0.0001 (bypass x402, quasi gratuit)
+  //  CASE 1: CACHE HIT — data on-chain, not expired
+  //  Cost: $0.0001 (bypass x402, nearly free)
   // ══════════════════════════════════════════════════════
 
   if (cachedData) {
-    // Enregistrer le hit on-chain (batch de 1)
+    // Record the hit on-chain (batch of 1)
     let txHash: string | null = null;
     try {
       txHash = await recordHitsOnChain(queryHash, 1n);
     } catch {
-      // Non-bloquant : on retourne la data meme si le recordHit echoue
+      // Non-blocking: return the data even if recordHit fails
     }
 
     emitEvent({
@@ -84,12 +84,12 @@ query.post("/", async (c) => {
   }
 
   // ══════════════════════════════════════════════════════
-  //  CAS 2 : CACHE MISS — data absente ou expiree
-  //  Cout : $0.01 (paiement x402 requis)
-  //  1. Detecter l'intent (prix, meteo, AI)
-  //  2. Appeler l'API externe
-  //  3. Stocker on-chain
-  //  4. Retourner au client
+  //  CASE 2: CACHE MISS — data absent or expired
+  //  Cost: $0.01 (x402 payment required)
+  //  1. Detect the intent (price, weather, AI)
+  //  2. Call the external API
+  //  3. Store on-chain
+  //  4. Return to the client
   // ══════════════════════════════════════════════════════
 
   const intent = detectIntent(input);
@@ -131,16 +131,16 @@ query.post("/", async (c) => {
 function detectIntent(input: string): { type: string; param: string } {
   const lower = input.toLowerCase().trim();
 
-  // Meteo
-  if (lower.match(/weather|météo|meteo|temperature|temps/)) {
+  // Weather
+  if (lower.match(/weather|temperature|forecast/)) {
     const city = lower
-      .replace(/weather|météo|meteo|temperature|temps|in|à|a/g, "")
+      .replace(/weather|temperature|forecast|in/g, "")
       .trim();
     return { type: "weather", param: city || "denver" };
   }
 
-  // Prix crypto
-  if (lower.match(/price|prix|eth|btc|sol|bitcoin|ethereum|solana|mon|monad/)) {
+  // Crypto price
+  if (lower.match(/price|eth|btc|sol|bitcoin|ethereum|solana|mon|monad/)) {
     const tokenMap: Record<string, string> = {
       eth: "ethereum",
       btc: "bitcoin",
@@ -148,11 +148,11 @@ function detectIntent(input: string): { type: string; param: string } {
       mon: "monad",
       monad: "monad",
     };
-    const word = lower.replace(/price|prix/g, "").trim().split(" ")[0];
+    const word = lower.replace(/price/g, "").trim().split(" ")[0];
     return { type: "price", param: tokenMap[word] || word };
   }
 
-  // Fallback : AI
+  // Fallback: AI
   return { type: "ai", param: input };
 }
 
@@ -164,7 +164,7 @@ async function fetchExternalAPI(
   type: string,
   param: string,
 ): Promise<Record<string, unknown>> {
-  // METEO (wttr.in — gratuit, pas de cle)
+  // WEATHER (wttr.in — free, no key)
   if (type === "weather") {
     const res = await fetch(
       `https://wttr.in/${encodeURIComponent(param)}?format=j1`,
@@ -173,14 +173,14 @@ async function fetchExternalAPI(
     const cur = json.current_condition?.[0];
     return {
       city: param,
-      temperature: cur?.temp_C || "N/A",
+      temperature: cur?.temp_F || "N/A",
       condition: cur?.weatherDesc?.[0]?.value || "Unknown",
       humidity: cur?.humidity || "N/A",
-      wind_kmph: cur?.windspeedKmph || "N/A",
+      wind_mph: cur?.windspeedMiles || "N/A",
     };
   }
 
-  // PRIX CRYPTO (CoinGecko — gratuit, pas de cle)
+  // CRYPTO PRICE (CoinGecko — free, no key)
   if (type === "price") {
     const res = await fetch(
       `https://api.coingecko.com/api/v3/simple/price?ids=${param}&vs_currencies=usd&include_24hr_change=true`,
@@ -193,7 +193,7 @@ async function fetchExternalAPI(
     };
   }
 
-  // AI (Groq — gratuit, necessite GROQ_API_KEY)
+  // AI (Groq — free, requires GROQ_API_KEY)
   if (type === "ai") {
     const res = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",

@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
 // ══════════════════════════════════════════════════════════
-//  SSE LIVE FEED — diffuse les events en temps reel
+//  SSE LIVE FEED — broadcasts events in real time
 // ══════════════════════════════════════════════════════════
 
 type EventPayload = {
@@ -15,17 +15,17 @@ type EventPayload = {
   txHash?: string | null;
 };
 
-// Tous les clients SSE connectes
+// All connected SSE clients
 const clients = new Set<(event: EventPayload) => void>();
 
-/** Envoie un event a tous les clients SSE connectes */
+/** Send an event to all connected SSE clients */
 export function emitEvent(payload: EventPayload) {
   for (const send of clients) {
     send(payload);
   }
 }
 
-/** Handler SSE — garde la connexion ouverte et stream les events */
+/** SSE handler — keeps the connection open and streams events */
 export function sseHandler(c: Context) {
   return streamSSE(c, async (stream) => {
     const send = (payload: EventPayload) => {
@@ -37,18 +37,18 @@ export function sseHandler(c: Context) {
 
     clients.add(send);
 
-    // Heartbeat toutes les 30s pour garder la connexion vivante
+    // Heartbeat every 30s to keep the connection alive
     const heartbeat = setInterval(() => {
       stream.writeSSE({ data: "", event: "ping" });
     }, 30_000);
 
-    // Cleanup quand le client se deconnecte
+    // Cleanup when the client disconnects
     stream.onAbort(() => {
       clients.delete(send);
       clearInterval(heartbeat);
     });
 
-    // Garder le stream ouvert
+    // Keep the stream open
     await new Promise(() => {});
   });
 }

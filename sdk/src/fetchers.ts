@@ -46,10 +46,10 @@ async function fetchWeather(city: string): Promise<Record<string, unknown>> {
   const desc = (cur.weatherDesc as { value: string }[])?.[0]?.value ?? "Unknown";
   return {
     city,
-    temperature: cur.temp_C ?? "N/A",
+    temperature: cur.temp_F ?? "N/A",
     condition: desc,
     humidity: cur.humidity ?? "N/A",
-    wind_kmph: cur.windspeedKmph ?? "N/A",
+    wind_mph: cur.windspeedMiles ?? "N/A",
   };
 }
 

@@ -14,7 +14,7 @@ export function detectIntent(input: string): { type: "price" | "weather" | "coun
 
   // Price detection: "ETH price", "price of bitcoin", "bitcoin", "BTC"
   const priceMatch = lower.match(
-    /(?:price|cost|value)\s+(?:of\s+)?(\w+)|(\w+)\s+price|(ethereum|bitcoin|btc|eth|sol|solana|matic|avax|dot|ada|mon|monad)/,
+    /(?:price)\s+(?:of\s+)?(\w+)|(\w+)\s+price|(ethereum|bitcoin|btc|eth|sol|solana|matic|avax|dot|ada|mon|monad)/,
   );
   if (priceMatch) {
     const raw = priceMatch[1] || priceMatch[2] || priceMatch[3];
@@ -22,9 +22,9 @@ export function detectIntent(input: string): { type: "price" | "weather" | "coun
     return { type: "price", param: token };
   }
 
-  // Weather detection: "Denver weather", "weather in Paris", "forecast Tokyo"
+  // Weather detection: "Denver weather", "weather in Paris", "Tokyo forecast"
   const weatherMatch = lower.match(
-    /(?:weather|temperature|forecast|climate)\s+(?:in\s+|at\s+|for\s+)?(\w+)|(\w+)\s+(?:weather|forecast)/,
+    /(?:weather|temperature|forecast)\s+(?:in\s+|for\s+)?(\w+)|(\w+)\s+(?:weather|forecast)/,
   );
   if (weatherMatch) {
     return { type: "weather", param: weatherMatch[1] || weatherMatch[2] };

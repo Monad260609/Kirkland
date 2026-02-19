@@ -11,7 +11,7 @@ const TOKEN_MAP: Record<string, string> = {
   solana: "solana",
 };
 
-const SKIP_WORDS = /^(price|prix|of|du|de|le|la|the|a|an|pour|get|give|what|is|are)$/;
+const SKIP_WORDS = /^(price|of|the|a|an|get|give|what|is|are)$/;
 
 /**
  * Detect the intent of a natural language query.
@@ -26,26 +26,26 @@ export function detectIntent(input: string): Intent {
   const lower = input.toLowerCase().trim();
 
   // ── Weather ──────────────────────────────────────────────
-  if (/weather|météo|meteo|temperature|temps/.test(lower)) {
+  if (/weather|temperature|forecast/.test(lower)) {
     const city = lower
-      .replace(/weather|météo|meteo|temperature|temps|in|à|a\b/g, "")
+      .replace(/weather|temperature|forecast|in/g, "")
       .trim();
     return { type: "weather", param: city || "denver" };
   }
 
   // ── Crypto price ─────────────────────────────────────────
-  if (/price|prix|eth\b|btc\b|sol\b|bitcoin|ethereum|solana|mon\b|monad/.test(lower)) {
+  if (/price|eth\b|btc\b|sol\b|bitcoin|ethereum|solana|mon\b|monad/.test(lower)) {
     const words = lower.replace(/[?!.,]/g, "").trim().split(/\s+/);
     const token = words.find(w => !SKIP_WORDS.test(w) && w.length > 1) ?? "ethereum";
     return { type: "price", param: TOKEN_MAP[token] ?? token };
   }
 
   // ── Country ──────────────────────────────────────────────
-  if (/country|pays|nation|population|capital|capitale/.test(lower)) {
+  if (/country|nation|population|capital/.test(lower)) {
     const country = lower
-      .replace(/country|pays|nation|population|capital|capitale|info|of|du|de/g, "")
+      .replace(/country|nation|population|capital|info|of/g, "")
       .trim();
-    return { type: "country", param: country || "france" };
+    return { type: "country", param: country || "usa" };
   }
 
   // ── AI fallback ──────────────────────────────────────────

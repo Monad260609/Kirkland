@@ -1,7 +1,7 @@
 import { publicClient } from "./chain";
 import { parseEther } from "viem";
 
-// Cache MISS = first to fetch, pays full price
+// Cache MISS = first to fetch, pays more
 // Cache HIT = data already on-chain, pays less
 export const PRICE_CACHE_MISS = "0.001"; // 0.001 MON
 export const PRICE_CACHE_HIT = "0.0001"; // 0.0001 MON
@@ -58,7 +58,7 @@ export async function verifyPayment(txHash: string, expectedPrice: string) {
 }
 
 /**
- * Returns the 402 response body with the appropriate price (miss or hit).
+ * Returns the 402 body with the appropriate price (miss or hit).
  */
 export function paymentRequiredResponse(isCached: boolean) {
   const price = isCached ? PRICE_CACHE_HIT : PRICE_CACHE_MISS;

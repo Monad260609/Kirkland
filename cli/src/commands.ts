@@ -38,30 +38,30 @@ type IntentType = "price" | "weather" | "country" | "ai";
 function detectIntent(input: string): { type: IntentType; param: string } {
   const lower = input.toLowerCase().trim();
 
-  if (/weather|météo|meteo|temperature|temps/.test(lower)) {
+  if (/weather|temperature|forecast/.test(lower)) {
     const city = lower
-      .replace(/weather|météo|meteo|temperature|temps|in|à|a/g, "")
+      .replace(/weather|temperature|forecast|in/g, "")
       .trim();
     return { type: "weather", param: city || "denver" };
   }
 
-  if (/price|prix|eth|btc|sol|bitcoin|ethereum|solana|mon|monad/.test(lower)) {
+  if (/price|eth|btc|sol|bitcoin|ethereum|solana|mon|monad/.test(lower)) {
     const tokenMap: Record<string, string> = {
       eth: "ethereum", btc: "bitcoin", sol: "solana",
       mon: "monad", monad: "monad",
       ethereum: "ethereum", bitcoin: "bitcoin", solana: "solana",
     };
-    const SKIP = /^(price|prix|of|du|de|le|la|the|a|an|pour)$/;
+    const SKIP = /^(price|of|the|a|an)$/;
     const words = lower.replace(/[?!.,]/g, "").trim().split(/\s+/);
     const token = words.find(w => !SKIP.test(w) && w.length > 1) ?? "ethereum";
     return { type: "price", param: tokenMap[token] ?? token };
   }
 
-  if (/country|pays|nation|population|capital|capitale/.test(lower)) {
+  if (/country|nation|population|capital/.test(lower)) {
     const country = lower
-      .replace(/country|pays|nation|population|capital|capitale|info|of|du|de/g, "")
+      .replace(/country|nation|population|capital|info|of/g, "")
       .trim();
-    return { type: "country", param: country || "france" };
+    return { type: "country", param: country || "usa" };
   }
 
   return { type: "ai", param: input };
@@ -89,10 +89,10 @@ async function fetchData(type: IntentType, param: string): Promise<Record<string
     const desc = (cur.weatherDesc as { value: string }[])?.[0]?.value ?? "Unknown";
     return {
       city: param,
-      temperature: cur.temp_C ?? "N/A",
+      temperature: cur.temp_F ?? "N/A",
       condition: desc,
       humidity: cur.humidity ?? "N/A",
-      wind_kmph: cur.windspeedKmph ?? "N/A",
+      wind_mph: cur.windspeedMiles ?? "N/A",
     };
   }
 
@@ -143,10 +143,10 @@ function displayData(type: IntentType, data: Record<string, unknown>) {
     line(`  ${C.bold}Token${C.reset}      ${String(data.token).toUpperCase()}`);
   } else if (type === "weather") {
     line(`  ${C.bold}City${C.reset}        ${data.city}`);
-    line(`  ${C.bold}Temperature${C.reset} ${C.cyan}${data.temperature}°C${C.reset}`);
+    line(`  ${C.bold}Temperature${C.reset} ${C.cyan}${data.temperature}°F${C.reset}`);
     line(`  ${C.bold}Condition${C.reset}   ${data.condition}`);
     line(`  ${C.bold}Humidity${C.reset}    ${data.humidity}%`);
-    line(`  ${C.bold}Wind${C.reset}        ${data.wind_kmph} km/h`);
+    line(`  ${C.bold}Wind${C.reset}        ${data.wind_mph} mph`);
   } else {
     for (const [k, v] of Object.entries(data)) {
       line(`  ${C.bold}${k}${C.reset}  ${v}`);

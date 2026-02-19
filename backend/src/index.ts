@@ -18,13 +18,13 @@ app.use("*", cors());
 
 // ══════════════════════════════════════════════════════════
 //  PRE-CHECK MIDDLEWARE
-//  Verifie le cache on-chain AVANT le middleware x402.
-//  Si la query est en cache → bypass le paywall ($0.0001)
-//  Si la query n'est PAS en cache → x402 exige $0.01
+//  Check the on-chain cache BEFORE the x402 middleware.
+//  If the query is cached → bypass the paywall ($0.0001)
+//  If the query is NOT cached → x402 requires $0.01
 // ══════════════════════════════════════════════════════════
 
 app.use("/api/query", async (c, next) => {
-  // Seul POST est concerne
+  // Only POST is relevant
   if (c.req.method !== "POST") return next();
 
   try {
@@ -36,17 +36,17 @@ app.use("/api/query", async (c, next) => {
     const queryHash = hashQuery(input);
     const result = await checkOnChainCache(queryHash);
 
-    // Stocker les resultats pour eviter un double call dans query.ts
+    // Store the results to avoid a double call in query.ts
     c.set("parsedBody", body);
     c.set("queryHash", queryHash);
     c.set("isCached", result.isCached);
 
     if (result.isCached) {
-      // Cache HIT → bypass x402, aller directement au handler
+      // Cache HIT → bypass x402, go directly to handler
       return next();
     }
   } catch {
-    // En cas d'erreur, laisser le flow normal (x402 + query)
+    // On error, let the normal flow continue (x402 + query)
   }
 
   return next();
@@ -54,19 +54,19 @@ app.use("/api/query", async (c, next) => {
 
 // ══════════════════════════════════════════════════════════
 //  x402 PAYMENT MIDDLEWARE
-//  Applique uniquement aux cache MISS (le pre-check
-//  a deja laisse passer les cache hits)
+//  Only applies to cache MISS (the pre-check
+//  already let cache hits through)
 // ══════════════════════════════════════════════════════════
 
 app.use("/api/query", async (c, next) => {
   const isCached = c.get("isCached") as boolean | undefined;
 
-  // Si c'est un cache hit, bypass le paywall x402
+  // If it's a cache hit, bypass the x402 paywall
   if (isCached === true) {
     return next();
   }
 
-  // Cache miss ou erreur de pre-check → exiger le paiement x402
+  // Cache miss or pre-check error → require x402 payment
   return x402Middleware(c, next);
 });
 
@@ -74,13 +74,13 @@ app.use("/api/query", async (c, next) => {
 //  ROUTES
 // ══════════════════════════════════════════════════════════
 
-// POST /api/query — route principale (cache hit ou miss)
+// POST /api/query — main route (cache hit or miss)
 app.route("/api/query", query);
 
-// GET /api/events — SSE live feed pour le dashboard
+// GET /api/events — SSE live feed for the dashboard
 app.get("/api/events", sseHandler);
 
-// GET /api/stats — stats globales du cache on-chain
+// GET /api/stats — global on-chain cache stats
 app.get("/api/stats", async (c) => {
   const stats = await getOnChainStats();
   return c.json({

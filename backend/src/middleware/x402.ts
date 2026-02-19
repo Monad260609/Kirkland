@@ -2,20 +2,20 @@ import { createThirdwebClient } from "thirdweb";
 import { facilitator } from "thirdweb/x402";
 import { paymentMiddleware } from "x402-hono";
 
-// Client thirdweb (backend → utilise secretKey)
+// Thirdweb client (backend → uses secretKey)
 const client = createThirdwebClient({
   secretKey: process.env.THIRDWEB_SECRET_KEY!,
 });
 
-// Facilitator — gere la verification et le settlement on-chain
+// Facilitator — handles verification and on-chain settlement
 const twFacilitator = facilitator({
   client,
   serverWalletAddress: process.env.SERVER_WALLET!,
 });
 
-// Le middleware exige un paiement x402 avant d'acceder aux routes /api/*
-// Prix = $0.01 pour un cache miss (premier a fetcher)
-// Les cache hits bypass ce middleware (gere dans index.ts)
+// The middleware requires an x402 payment before accessing /api/* routes
+// Price = $0.01 for a cache miss (first to fetch)
+// Cache hits bypass this middleware (handled in index.ts)
 export const x402Middleware = paymentMiddleware(
   process.env.SERVER_WALLET!,
   {

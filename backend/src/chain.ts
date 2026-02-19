@@ -120,12 +120,12 @@ const cacheAddress = (process.env.DATACACHE_ADDRESS ||
 //  HELPERS
 // ══════════════════════════════════════════════════════════
 
-/** Hash une query de maniere deterministe (lowercase + trim) */
+/** Hash a query deterministically (lowercase + trim) */
 export function hashQuery(query: string): `0x${string}` {
   return keccak256(toHex(query.toLowerCase().trim()));
 }
 
-/** READ: est-ce que la query est en cache on-chain ? (gratuit) */
+/** READ: is the query cached on-chain? (free) */
 export async function checkOnChainCache(queryHash: `0x${string}`) {
   const [isCached, data] = await publicClient.readContract({
     address: cacheAddress,
@@ -136,7 +136,7 @@ export async function checkOnChainCache(queryHash: `0x${string}`) {
   return { isCached, data };
 }
 
-/** WRITE: stocker un resultat apres un cache miss (coute du gas MON) */
+/** WRITE: store a result after a cache miss (costs MON gas) */
 export async function storeResultOnChain(
   queryHash: `0x${string}`,
   query: string,
@@ -152,7 +152,7 @@ export async function storeResultOnChain(
   return txHash;
 }
 
-/** WRITE: enregistrer des hits en batch (coute du gas MON) */
+/** WRITE: record hits in batch (costs MON gas) */
 export async function recordHitsOnChain(
   queryHash: `0x${string}`,
   count: bigint,
@@ -166,7 +166,7 @@ export async function recordHitsOnChain(
   return txHash;
 }
 
-/** READ: stats globales (gratuit) */
+/** READ: global stats (free) */
 export async function getOnChainStats() {
   const [seeds, hits, queries] = await publicClient.readContract({
     address: cacheAddress,
