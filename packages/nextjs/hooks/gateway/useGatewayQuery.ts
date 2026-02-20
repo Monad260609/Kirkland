@@ -97,18 +97,28 @@ export function useGatewayQuery() {
         // Small delay before retry to let the RPC breathe
         await new Promise(r => setTimeout(r, 1000));
 
-        // Retry with payment proof
-        const retryRes = await fetch("/api/query", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-PAYMENT": paymentTxHash,
-          },
-          body: JSON.stringify({ query }),
-        });
+        // Retry with payment proof (with backoff on 500 errors)
+        let retryRes: Response | null = null;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          retryRes = await fetch("/api/query", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-PAYMENT": paymentTxHash,
+            },
+            body: JSON.stringify({ query }),
+          });
 
-        if (!retryRes.ok) {
-          const body = await retryRes.json();
+          // If we got a 500, retry with backoff (transient RPC error)
+          if (retryRes.status >= 500 && attempt < 3) {
+            await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt)));
+            continue;
+          }
+          break;
+        }
+
+        if (!retryRes || !retryRes.ok) {
+          const body = retryRes ? await retryRes.json() : { error: "No response" };
           throw new Error(body.error || "Query failed after payment");
         }
 

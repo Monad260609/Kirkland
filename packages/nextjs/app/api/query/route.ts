@@ -87,7 +87,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    const stack = err instanceof Error ? err.stack : "";
     console.error("Query error:", message);
+    if (stack) console.error("Stack:", stack);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

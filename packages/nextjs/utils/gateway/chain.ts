@@ -2,14 +2,21 @@ import { createPublicClient, createWalletClient, http, keccak256, toHex } from "
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "~~/scaffold.config";
 
-async function withRetry<T>(fn: () => Promise<T>, retries = 4, baseDelay = 600): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 5, baseDelay = 800): Promise<T> {
   for (let i = 0; i <= retries; i++) {
     try {
       return await fn();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
-      const isRateLimit = msg.includes("429") || msg.includes("Too Many Requests");
-      if (!isRateLimit || i === retries) throw err;
+      const isRetryable =
+        msg.includes("429") ||
+        msg.includes("Too Many Requests") ||
+        msg.includes("ECONNRESET") ||
+        msg.includes("ETIMEDOUT") ||
+        msg.includes("fetch failed") ||
+        msg.includes("nonce") ||
+        msg.includes("already known");
+      if (!isRetryable || i === retries) throw err;
       await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
     }
   }

@@ -2,9 +2,9 @@
 
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import type { NextPage } from "next";
-import { HowItWorksContent } from "~~/components/content/HowItWorksContent";
+import { DevToolsContent } from "~~/components/content/DevToolsContent";
 
-const HowItWorksPage: NextPage = () => {
+const DevToolsPage: NextPage = () => {
   return (
     <>
       <ShaderGradientCanvas style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
@@ -39,10 +39,10 @@ const HowItWorksPage: NextPage = () => {
       </ShaderGradientCanvas>
 
       <div className="relative z-10 flex flex-col grow px-6 md:px-12 pt-20 pb-16 overflow-y-auto scrollbar-hide">
-        <HowItWorksContent />
+        <DevToolsContent />
       </div>
     </>
   );
 };
 
-export default HowItWorksPage;
+export default DevToolsPage;

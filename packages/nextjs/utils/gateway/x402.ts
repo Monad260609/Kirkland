@@ -13,9 +13,23 @@ export async function verifyPayment(txHash: string, expectedPrice: string) {
   const serverWallet = process.env.SERVER_WALLET?.toLowerCase();
   if (!serverWallet) throw new Error("SERVER_WALLET not set");
 
-  // Retry on 429 — the RPC may rate-limit us after the user's payment tx
-  const maxRetries = 4;
-  const baseDelay = 600;
+  // Retry on 429 or "not found" — the RPC may rate-limit or not have indexed the tx yet
+  const maxRetries = 6;
+  const baseDelay = 800;
+
+  function isRetryable(msg: string): boolean {
+    return (
+      msg.includes("429") ||
+      msg.includes("Too Many Requests") ||
+      msg.includes("not found") ||
+      msg.includes("could not be found") ||
+      msg.includes("transaction not found") ||
+      msg.includes("does not exist") ||
+      msg.includes("ECONNRESET") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("fetch failed")
+    );
+  }
 
   let receipt;
   for (let i = 0; i <= maxRetries; i++) {
@@ -24,7 +38,7 @@ export async function verifyPayment(txHash: string, expectedPrice: string) {
       break;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
-      if ((!msg.includes("429") && !msg.includes("Too Many Requests")) || i === maxRetries) throw err;
+      if (!isRetryable(msg) || i === maxRetries) throw err;
       await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
     }
   }
@@ -40,7 +54,7 @@ export async function verifyPayment(txHash: string, expectedPrice: string) {
       break;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
-      if ((!msg.includes("429") && !msg.includes("Too Many Requests")) || i === maxRetries) throw err;
+      if (!isRetryable(msg) || i === maxRetries) throw err;
       await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
     }
   }
