@@ -170,7 +170,7 @@ const Home: NextPage = () => {
           </section>
         )}
 
-        {/* ─── Default view: Live Stats + Footer ─── */}
+        {/* ─── Default view: Live Stats ─── */}
         {activeSection === null && (
           <>
             <section className="flex flex-col items-center mb-16">
