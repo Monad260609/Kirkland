@@ -62,6 +62,7 @@ const TargetCursor = ({
     }
 
     const cursor = cursorRef.current;
+    const activeStrength = activeStrengthRef.current;
     cornersRef.current = cursor.querySelectorAll(".target-cursor-corner");
 
     let activeTarget: Element | null = null;
@@ -273,7 +274,7 @@ const TargetCursor = ({
       document.body.style.cursor = originalCursor;
       isActiveRef.current = false;
       targetCornerPositionsRef.current = null;
-      activeStrengthRef.current.current = 0;
+      activeStrength.current = 0;
     };
   }, [targetSelector, spinDuration, moveCursor, constants, hideDefaultCursor, isMobile, hoverDuration, parallaxOn]);
 
