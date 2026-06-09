@@ -2,6 +2,7 @@
 
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import type { NextPage } from "next";
+import { LiveFeed } from "~~/components/gateway/LiveFeed";
 import { MarketContent } from "~~/components/gateway/MarketContent";
 
 const Dashboard: NextPage = () => {
@@ -44,6 +45,7 @@ const Dashboard: NextPage = () => {
         </h1>
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <MarketContent />
+          <LiveFeed />
         </div>
       </div>
     </>
