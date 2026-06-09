@@ -12,7 +12,7 @@ const TOKEN_MAP: Record<string, string> = {
 // Tokens we know how to quote on Uniswap (Ethereum mainnet pools).
 const UNISWAP_TOKENS = ["eth", "weth", "usdc", "usdt", "dai", "wbtc", "uni", "link"];
 
-export type IntentType = "price" | "weather" | "country" | "swap-quote";
+export type IntentType = "price" | "weather" | "country" | "swap-quote" | "ai";
 
 export interface Intent {
   type: IntentType;
@@ -72,6 +72,11 @@ export function detectIntent(input: string): Intent {
     return { type: "country", param: countryMatch[1].trim() };
   }
 
-  // Default: treat as crypto price
-  return { type: "price", param: TOKEN_MAP[lower] || lower };
+  // Bare known token symbol ("eth", "monad") → price
+  if (TOKEN_MAP[lower]) {
+    return { type: "price", param: TOKEN_MAP[lower] };
+  }
+
+  // Anything else → AI fallback (answered by Groq, cached like any other entry)
+  return { type: "ai", param: input.trim() };
 }

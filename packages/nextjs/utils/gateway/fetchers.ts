@@ -80,6 +80,43 @@ export async function fetchSwapQuote(param: string): Promise<string> {
   }
 }
 
+/// Answer free-form questions with Groq (Llama 3.3 70B).
+/// Returns {error} when no key is configured — the route turns that into a
+/// 502 without caching, so nothing fake ever lands on-chain.
+export async function fetchAI(question: string): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return JSON.stringify({ error: "AI category requires GROQ_API_KEY on the gateway" });
+  }
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 200,
+      messages: [
+        { role: "system", content: "Answer factually in at most two short sentences." },
+        { role: "user", content: question },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    return JSON.stringify({ error: `Groq API failed: ${res.status}` });
+  }
+
+  const json = await res.json();
+  const answer = json.choices?.[0]?.message?.content?.trim();
+  if (!answer) {
+    return JSON.stringify({ error: "Groq returned an empty answer" });
+  }
+  return JSON.stringify({ question, answer, model: "llama-3.3-70b-versatile" });
+}
+
 /// Route to the right fetcher based on intent type
 export async function fetchFromSource(type: string, param: string): Promise<string> {
   switch (type) {
@@ -91,6 +128,8 @@ export async function fetchFromSource(type: string, param: string): Promise<stri
       return fetchCountry(param);
     case "swap-quote":
       return fetchSwapQuote(param);
+    case "ai":
+      return fetchAI(param);
     default:
       return JSON.stringify({ error: "Unknown query type" });
   }

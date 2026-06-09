@@ -151,6 +151,7 @@ function MarketResultPageInner() {
           {category === "weather" && query}
           {category === "countries" && query}
           {category === "swap" && query}
+          {category === "ai" && query}
         </motion.h1>
         <p className="text-white/50 text-base mb-8">via x402 Gateway on Monad</p>
 
@@ -250,6 +251,7 @@ function MarketResultPageInner() {
             {category === "weather" && <WeatherResult data={result.data} />}
             {category === "countries" && <CountriesResult data={result.data} />}
             {category === "swap" && <SwapQuoteResult data={result.data} />}
+            {category === "ai" && <AIResult data={result.data} />}
           </motion.div>
         )}
       </div>
@@ -471,6 +473,28 @@ function buildUniswapDeepLink(tokenIn: string, tokenOut: string, amountIn: strin
     exactField: "input",
   });
   return `https://app.uniswap.org/#/swap?${params.toString()}`;
+}
+
+/* ── AI answer (Groq) ── */
+function AIResult({ data }: { data: Record<string, unknown> }) {
+  if (typeof data.error === "string") {
+    return (
+      <div className="rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-md p-6 text-red-300">
+        {data.error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-8">
+        <p className="text-white text-2xl leading-relaxed">{String(data.answer ?? "—")}</p>
+      </div>
+      <p className="text-white/40 text-xs text-center">
+        Answered by {String(data.model ?? "Groq")} · cached on Monad for 60s
+      </p>
+    </div>
+  );
 }
 
 /* ── Fallback: raw JSON display ── */

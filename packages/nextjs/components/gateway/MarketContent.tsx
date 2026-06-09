@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconArrowsExchange, IconChevronDown, IconCloud, IconCoin, IconWorld } from "@tabler/icons-react";
+import { IconArrowsExchange, IconChevronDown, IconCloud, IconCoin, IconSparkles, IconWorld } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { HoverEffect } from "~~/components/ui/card-hover-effect";
 
@@ -40,7 +40,7 @@ const CATEGORIES: CategoryData[] = [
   },
   {
     title: "Uniswap Quotes (Ethereum)",
-    description: "Live swap quotes from Uniswap, cached on Monad",
+    description: "On-chain V3 pool quotes via QuoterV2, cached on Monad",
     icon: <IconArrowsExchange className="h-6 w-6" />,
     options: [
       "quote 1 eth to usdc",
@@ -50,6 +50,19 @@ const CATEGORIES: CategoryData[] = [
       "quote 1 link to eth",
     ],
     catKey: "swap",
+  },
+  {
+    title: "Ask AI (Groq)",
+    description: "Llama 3.3 70B answers, cached on Monad like any data",
+    icon: <IconSparkles className="h-6 w-6" />,
+    options: [
+      "what is the speed of light",
+      "who invented bitcoin",
+      "how tall is the empire state building",
+      "what is x402",
+      "when was new york founded",
+    ],
+    catKey: "ai",
   },
 ];
 
