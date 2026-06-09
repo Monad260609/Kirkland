@@ -4,7 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
-import { IconArrowLeft, IconCheck, IconCoin, IconExternalLink, IconLoader2, IconWallet } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconCheck,
+  IconCoin,
+  IconExternalLink,
+  IconLoader2,
+  IconShieldCheck,
+  IconWallet,
+} from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { useGatewayQuery } from "~~/hooks/gateway/useGatewayQuery";
@@ -244,6 +252,15 @@ function PaymentInfoBanner({ result }: { result: GatewayResult }) {
         Cost: <span className="text-white font-semibold">{result.cost}</span>
       </span>
       <span className="text-white/50 text-sm">Source: {result.source}</span>
+      {result.agentVerified && result.agentId && (
+        <span
+          className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono"
+          title={`Signed by agent ${result.agentId}`}
+        >
+          <IconShieldCheck className="h-4 w-4" />
+          AGENT {result.agentId.slice(0, 6)}…{result.agentId.slice(-4)}
+        </span>
+      )}
       {result.explorerUrl && (
         <a
           href={result.explorerUrl}

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { parseEther } from "viem";
-import { useAccount, useSendTransaction } from "wagmi";
+import { useAccount, useSendTransaction, useSignMessage } from "wagmi";
 
 const SERVER_WALLET = process.env.NEXT_PUBLIC_SERVER_WALLET as `0x${string}`;
 
@@ -16,12 +16,21 @@ export interface GatewayResult {
   txHash?: string;
   explorerUrl?: string;
   source: string;
+  agentId?: string;
+  agentVerified?: boolean;
   timestamp: number;
+}
+
+interface AgentHeaders {
+  "X-Agent-Id": string;
+  "X-Agent-Sig": string;
+  "X-Agent-Ts": string;
 }
 
 export function useGatewayQuery() {
   const { address } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
+  const { signMessageAsync } = useSignMessage();
   const [result, setResult] = useState<GatewayResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -97,6 +106,22 @@ export function useGatewayQuery() {
         // Small delay before retry to let the RPC breathe
         await new Promise(r => setTimeout(r, 1000));
 
+        // Sign agent identity (cachemarket-agent:<address>:<timestamp>)
+        // The server verifies this signature and stamps the response with agentVerified=true.
+        const agentTs = Date.now().toString();
+        const agentMessage = `cachemarket-agent:${address}:${agentTs}`;
+        let agentHeaders: AgentHeaders | null = null;
+        try {
+          const agentSig = await signMessageAsync({ message: agentMessage });
+          agentHeaders = {
+            "X-Agent-Id": address,
+            "X-Agent-Sig": agentSig,
+            "X-Agent-Ts": agentTs,
+          };
+        } catch {
+          // User rejected signature — proceed as anonymous (payment still valid)
+        }
+
         // Retry with payment proof (with backoff on 500 errors)
         let retryRes: Response | null = null;
         for (let attempt = 0; attempt < 4; attempt++) {
@@ -105,6 +130,7 @@ export function useGatewayQuery() {
             headers: {
               "Content-Type": "application/json",
               "X-PAYMENT": paymentTxHash,
+              ...(agentHeaders ?? {}),
             },
             body: JSON.stringify({ query }),
           });
@@ -133,7 +159,7 @@ export function useGatewayQuery() {
         setIsPending(false);
       }
     },
-    [address, sendTransactionAsync],
+    [address, sendTransactionAsync, signMessageAsync],
   );
 
   return { queryGateway, result, error, isPending };
