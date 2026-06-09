@@ -362,7 +362,7 @@ Calls `getTransactionReceipt` on Monad. Returns `{ confirmed: true/false }`.
 ## File Structure
 
 ```
-monad-blitz-denver/
+cachemarket/
 ├── packages/
 │   ├── nextjs/                          # Main app
 │   │   ├── app/
