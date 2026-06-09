@@ -45,6 +45,11 @@ const INITIAL_FLOW: FlowState = {
   agentVerified: false,
 };
 
+interface PendingPayment {
+  txHash: string;
+  query: string;
+}
+
 export function useGatewayQuery() {
   const { address } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
@@ -53,6 +58,9 @@ export function useGatewayQuery() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [flow, setFlow] = useState<FlowState>(INITIAL_FLOW);
+  // A confirmed but not-yet-redeemed payment, kept after a post-payment
+  // failure so the user can retry without paying twice.
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
 
   /**
    * @param query  - Natural language query ("eth price", "New York weather", etc.)
@@ -125,35 +133,43 @@ export function useGatewayQuery() {
         }
         setFlow(f => ({ ...f, cached, paymentAmount: `${price} MON` }));
 
-        // ── Step 3: send MON payment ──
-        const paymentTxHash = await sendTransactionAsync({
-          to: SERVER_WALLET,
-          value: parseEther(price),
-        });
-        setFlow(f => ({ ...f, paymentTxHash, currentStep: "confirmation" }));
+        // ── Step 3: send MON payment (or reuse a kept one) ──
+        const reusingPayment = pendingPayment !== null && pendingPayment.query === query;
+        let paymentTxHash: `0x${string}`;
 
-        // ── Step 4: wait for confirmation on Monad ──
-        let confirmed = false;
-        for (let i = 0; i < 20; i++) {
-          await new Promise(r => setTimeout(r, 2500));
-          try {
-            const checkRes = await fetch(`/api/tx-status?hash=${paymentTxHash}`);
-            if (checkRes.ok) {
-              const status = await checkRes.json();
-              if (status.confirmed) {
-                confirmed = true;
-                break;
+        if (reusingPayment) {
+          paymentTxHash = pendingPayment.txHash as `0x${string}`;
+          setFlow(f => ({ ...f, paymentTxHash, currentStep: "cache" }));
+        } else {
+          paymentTxHash = await sendTransactionAsync({
+            to: SERVER_WALLET,
+            value: parseEther(price),
+          });
+          setFlow(f => ({ ...f, paymentTxHash, currentStep: "confirmation" }));
+
+          // ── Step 4: wait for confirmation on Monad ──
+          let confirmed = false;
+          for (let i = 0; i < 20; i++) {
+            await new Promise(r => setTimeout(r, 2500));
+            try {
+              const checkRes = await fetch(`/api/tx-status?hash=${paymentTxHash}`);
+              if (checkRes.ok) {
+                const status = await checkRes.json();
+                if (status.confirmed) {
+                  confirmed = true;
+                  break;
+                }
               }
+            } catch {
+              // continue polling
             }
-          } catch {
-            // continue polling
           }
+
+          if (!confirmed) throw new Error("Payment transaction not confirmed");
+
+          // Small delay before retry to let the RPC breathe
+          await new Promise(r => setTimeout(r, 1000));
         }
-
-        if (!confirmed) throw new Error("Payment transaction not confirmed");
-
-        // Small delay before retry to let the RPC breathe
-        await new Promise(r => setTimeout(r, 1000));
 
         // ── Step 5: retry with payment proof + agent headers ──
         setFlow(f => ({ ...f, currentStep: "cache" }));
@@ -178,10 +194,23 @@ export function useGatewayQuery() {
 
         if (!retryRes || !retryRes.ok) {
           const body = retryRes ? await retryRes.json() : { error: "No response" };
-          throw new Error(body.error || "Query failed after payment");
+          const reason: string = body.error || "Query failed after payment";
+
+          if (retryRes && retryRes.status === 402 && reusingPayment) {
+            // Kept payment no longer valid (already redeemed, or the cache
+            // state flipped and the old amount is insufficient) — drop it.
+            setPendingPayment(null);
+            throw new Error(`${reason} — the kept payment can't be reused, please pay again`);
+          }
+
+          // Server failed after a confirmed payment: keep the tx hash so the
+          // next attempt skips the wallet entirely.
+          setPendingPayment({ txHash: paymentTxHash, query });
+          throw new Error(reason);
         }
 
         const data = (await retryRes.json()) as GatewayResult;
+        setPendingPayment(null);
         setResult(data);
         setFlow(f => ({
           ...f,
@@ -200,7 +229,7 @@ export function useGatewayQuery() {
         setIsPending(false);
       }
     },
-    [address, sendTransactionAsync, signMessageAsync],
+    [address, sendTransactionAsync, signMessageAsync, pendingPayment],
   );
 
   const resetFlow = useCallback(() => {
@@ -209,5 +238,5 @@ export function useGatewayQuery() {
     setError(null);
   }, []);
 
-  return { queryGateway, result, error, isPending, flow, resetFlow };
+  return { queryGateway, result, error, isPending, flow, resetFlow, pendingPayment };
 }

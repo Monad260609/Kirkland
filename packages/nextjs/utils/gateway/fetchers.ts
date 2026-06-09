@@ -23,15 +23,24 @@ export async function fetchPrice(token: string): Promise<string> {
   const res = await fetchWithRetry(
     `https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd&include_24hr_change=true`,
   );
+  // Distinguish upstream failure from a genuinely unknown token — a 429
+  // must never masquerade as "token not found".
+  if (!res.ok) {
+    const reason = res.status === 429 ? "rate-limited" : `HTTP ${res.status}`;
+    return JSON.stringify({ error: `CoinGecko unavailable (${reason}) — retry in a moment` });
+  }
   const json = await res.json();
   const data = json[token];
-  if (!data) return JSON.stringify({ error: `Token "${token}" not found` });
+  if (!data) return JSON.stringify({ error: `Token "${token}" not found on CoinGecko` });
   return JSON.stringify(data);
 }
 
 /// Fetch weather from wttr.in (free, no API key)
 export async function fetchWeather(city: string): Promise<string> {
   const res = await fetchWithRetry(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+  if (!res.ok) {
+    return JSON.stringify({ error: `wttr.in unavailable (HTTP ${res.status}) — retry in a moment` });
+  }
   const json = await res.json();
   const cur = json.current_condition?.[0];
   if (!cur) return JSON.stringify({ error: `City "${city}" not found` });
@@ -49,6 +58,9 @@ export async function fetchCountry(country: string): Promise<string> {
   const res = await fetchWithRetry(
     `https://restcountries.com/v3.1/name/${encodeURIComponent(country)}?fields=name,capital,population,currencies,region,flags`,
   );
+  if (!res.ok && res.status !== 404) {
+    return JSON.stringify({ error: `REST Countries unavailable (HTTP ${res.status}) — retry in a moment` });
+  }
   const json = await res.json();
   if (json.status === 404 || json.message) return JSON.stringify({ error: `Country "${country}" not found` });
   const c = json[0];

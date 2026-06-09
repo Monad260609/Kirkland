@@ -47,7 +47,7 @@ function MarketResultPageInner() {
   const fullQuery = buildQuery(category, query);
 
   const { isConnected } = useAccount();
-  const { queryGateway, result, error, isPending, flow } = useGatewayQuery();
+  const { queryGateway, result, error, isPending, flow, pendingPayment } = useGatewayQuery();
 
   const [preCheck, setPreCheck] = useState<CachePreCheck | null>(null);
   const [preCheckLoading, setPreCheckLoading] = useState(true);
@@ -177,7 +177,7 @@ function MarketResultPageInner() {
         )}
 
         {/* ── STATE 3: Ready to pay (pre-check done, no result yet) ── */}
-        {isConnected && !preCheckLoading && preCheck && !result && !isPending && (
+        {isConnected && !preCheckLoading && preCheck && !result && !isPending && !pendingPayment && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -233,8 +233,35 @@ function MarketResultPageInner() {
           </div>
         )}
 
-        {/* ── STATE 5: Error (after payment attempt) ── */}
-        {error && !isPending && !result && !preCheck && (
+        {/* ── STATE 5: Error after a confirmed payment — payment is kept ── */}
+        {error && !isPending && !result && pendingPayment && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-lg mx-auto w-full"
+          >
+            <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-8 text-center space-y-5">
+              <span className="inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <IconCoin className="h-4 w-4" />
+                Payment confirmed — kept for retry
+              </span>
+              <p className="text-red-300 text-base">{error}</p>
+              <p className="text-white/50 text-sm">
+                Your {flow.paymentAmount ?? "MON"} payment ({pendingPayment.txHash.slice(0, 10)}…) was confirmed
+                on-chain but the data fetch failed. Retry below — you will not be charged again.
+              </p>
+              <button
+                onClick={handlePay}
+                className="w-full px-6 py-4 rounded-xl bg-white/15 border border-white/25 text-white text-lg font-semibold hover:bg-white/25 hover:border-white/40 active:scale-[0.98] transition-all"
+              >
+                Retry — no new payment
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── STATE 5bis: Error before any payment ── */}
+        {error && !isPending && !result && !preCheck && !pendingPayment && (
           <div className="rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-md p-6 text-red-300 text-lg">
             Error: {error}
           </div>
