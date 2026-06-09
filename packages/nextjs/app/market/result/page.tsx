@@ -146,9 +146,12 @@ function MarketResultPageInner() {
       </ShaderGradientCanvas>
 
       <div className="relative z-10 min-h-screen flex flex-col px-6 md:px-12 pt-10 pb-20">
-        <Link href="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-8 w-fit">
-          <IconArrowLeft className="h-5 w-5" />
-          <span className="text-lg">Back to Market</span>
+        <Link
+          href="/dashboard"
+          className="relative z-10 pointer-events-auto inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-8 w-fit cursor-pointer py-1 -my-1"
+        >
+          <IconArrowLeft className="h-5 w-5 pointer-events-none" />
+          <span className="text-lg pointer-events-none">Back to Market</span>
         </Link>
 
         <motion.h1

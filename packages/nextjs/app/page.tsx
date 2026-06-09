@@ -39,7 +39,7 @@ function LiveStats() {
           className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 text-center"
         >
           <div className="text-2xl md:text-3xl font-bold text-white">{item.value}</div>
-          <div className="text-white/70 text-xs mt-1">{item.label}</div>
+          <div className="text-white/70 text-sm mt-1">{item.label}</div>
         </motion.div>
       ))}
     </div>
@@ -118,7 +118,7 @@ const Home: NextPage = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-white/70 text-sm md:text-base max-w-xl mb-8"
+            className="text-white/70 text-base md:text-lg max-w-xl mb-8"
           >
             An on-chain data caching protocol on Monad. The first requester seeds the cache, everyone else reads for 10x
             less. No API keys. No subscriptions. Just a wallet.
@@ -191,7 +191,7 @@ const Home: NextPage = () => {
               transition={{ delay: 1.0 }}
               className="text-center"
             >
-              <p className="text-white/60 text-sm">
+              <p className="text-white/60 text-base">
                 Built on <span className="text-white/80 font-medium">Monad Testnet</span> · Powered by{" "}
                 <span className="text-white/80 font-medium">x402 Protocol</span>
               </p>

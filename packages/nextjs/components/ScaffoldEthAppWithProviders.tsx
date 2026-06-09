@@ -27,8 +27,8 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   const isConnect = pathname === "/connect";
   const isWeb3 = !isWeb2 && !isAbout && !isConnect;
 
-  // Logo target: landing page for Web2, app home for everything else
-  const logoHref = isWeb2 ? "/" : "/dashboard";
+  // Logo target: always back to the landing page
+  const logoHref = "/";
 
   return (
     <>
@@ -60,7 +60,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
             ) : (
               <Link
                 href="/connect"
-                className="px-4 py-2 bg-white/10 border border-white/15 rounded-xl text-white hover:bg-white/20 backdrop-blur-sm transition-all text-sm"
+                className="px-7 py-3.5 bg-white/10 border border-white/15 rounded-xl text-white hover:bg-white/20 backdrop-blur-sm transition-all text-lg font-semibold"
               >
                 Connect Wallet
               </Link>

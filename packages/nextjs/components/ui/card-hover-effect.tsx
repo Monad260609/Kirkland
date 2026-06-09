@@ -79,5 +79,5 @@ export const CardTitle = ({ className, children }: { className?: string; childre
 };
 
 export const CardDescription = ({ className, children }: { className?: string; children: React.ReactNode }) => {
-  return <p className={cn("text-white/60 text-sm leading-relaxed", className)}>{children}</p>;
+  return <p className={cn("text-white/60 text-base leading-relaxed", className)}>{children}</p>;
 };

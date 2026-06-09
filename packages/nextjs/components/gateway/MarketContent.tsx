@@ -67,7 +67,7 @@ function MetricDropdown({
       <select
         value={selected}
         onChange={e => onSelect(e.target.value)}
-        className="w-full appearance-none px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm hover:bg-white/15 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/30 pr-8"
+        className="w-full appearance-none px-3 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-base hover:bg-white/15 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/30 pr-8"
         style={{ WebkitAppearance: "none" }}
       >
         {options.map(opt => (
@@ -104,7 +104,7 @@ function CountryPicker() {
       <MetricDropdown options={COUNTRY_INFOS} selected={info} onSelect={setInfo} />
       <button
         onClick={request}
-        className="w-full px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-sm font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all"
+        className="w-full px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-base font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all"
       >
         Request API →
       </button>
@@ -138,12 +138,12 @@ function AIChatInput() {
           value={question}
           onChange={e => setQuestion(e.target.value)}
           placeholder="Ask anything…"
-          className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
+          className="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-base placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
         />
         <button
           type="submit"
           disabled={!question.trim()}
-          className="px-4 py-2 rounded-xl bg-white/15 border border-white/20 text-white text-sm font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-base font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Ask →
         </button>
@@ -153,7 +153,7 @@ function AIChatInput() {
           <button
             key={s}
             onClick={() => ask(s)}
-            className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs hover:bg-white/15 hover:text-white transition-all"
+            className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/15 hover:text-white transition-all"
           >
             {s}
           </button>
@@ -186,7 +186,7 @@ export function MarketContent() {
           onClick={() =>
             router.push(`/market/result?cat=${encodeURIComponent(cat.catKey)}&q=${encodeURIComponent(selections[i])}`)
           }
-          className="w-full px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-sm font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all"
+          className="w-full px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-base font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all"
         >
           Request API →
         </button>
