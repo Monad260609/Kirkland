@@ -69,6 +69,16 @@ const DATACACHE_ABI = [
       { name: "queries", type: "uint256" },
     ],
   },
+  {
+    name: "recordHits",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "queryHash", type: "bytes32" },
+      { name: "count", type: "uint256" },
+    ],
+    outputs: [],
+  },
 ] as const;
 
 export const publicClient = createPublicClient({
@@ -122,6 +132,17 @@ export async function storeResultOnChain(queryHash: `0x${string}`, query: string
       args: [queryHash, query, data, seeder as `0x${string}`],
     });
     return txHash;
+  });
+}
+
+export async function recordHitOnChain(queryHash: `0x${string}`) {
+  return withRetry(async () => {
+    return getWalletClient().writeContract({
+      address: getCacheAddress(),
+      abi: DATACACHE_ABI,
+      functionName: "recordHits",
+      args: [queryHash, 1n],
+    });
   });
 }
 

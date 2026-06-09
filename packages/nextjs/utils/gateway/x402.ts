@@ -6,12 +6,27 @@ import { parseEther } from "viem";
 export const PRICE_CACHE_MISS = "0.001"; // 0.001 MON
 export const PRICE_CACHE_HIT = "0.0001"; // 0.0001 MON
 
+// Payment tx hashes already redeemed for a successful query response.
+// In-memory: resets on server restart, sufficient for a single-instance gateway.
+// Redemption happens only when a response is actually served (see route.ts),
+// so client retries after a transient 5xx keep working with the same payment.
+const usedPayments = new Set<string>();
+
+export function markPaymentRedeemed(txHash: string) {
+  usedPayments.add(txHash.toLowerCase());
+}
+
 /**
- * Verifies that a tx hash corresponds to a valid MON payment to SERVER_WALLET.
+ * Verifies that a tx hash corresponds to a valid MON payment to SERVER_WALLET
+ * that has not already been redeemed for a previous response.
  */
 export async function verifyPayment(txHash: string, expectedPrice: string) {
   const serverWallet = process.env.SERVER_WALLET?.toLowerCase();
   if (!serverWallet) throw new Error("SERVER_WALLET not set");
+
+  if (usedPayments.has(txHash.toLowerCase())) {
+    return { ok: false as const, reason: "Payment already redeemed" };
+  }
 
   // Retry on 429 or "not found" — the RPC may rate-limit or not have indexed the tx yet
   const maxRetries = 6;

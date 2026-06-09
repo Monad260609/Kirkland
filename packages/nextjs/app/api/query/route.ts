@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAgentIdentity } from "~~/utils/gateway/agentIdentity";
-import { checkOnChainCache, hashQuery, storeResultOnChain } from "~~/utils/gateway/chain";
+import { checkOnChainCache, hashQuery, recordHitOnChain, storeResultOnChain } from "~~/utils/gateway/chain";
 import { detectIntent } from "~~/utils/gateway/detect";
 import { emitEvent } from "~~/utils/gateway/events";
 import { fetchFromSource } from "~~/utils/gateway/fetchers";
-import { PRICE_CACHE_HIT, PRICE_CACHE_MISS, paymentRequiredResponse, verifyPayment } from "~~/utils/gateway/x402";
+import {
+  PRICE_CACHE_HIT,
+  PRICE_CACHE_MISS,
+  markPaymentRedeemed,
+  paymentRequiredResponse,
+  verifyPayment,
+} from "~~/utils/gateway/x402";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +47,11 @@ export async function POST(req: NextRequest) {
     //  CACHE HIT — 0.0001 MON (10x cheaper)
     // ══════════════════════════════════════════════════════
     if (isCached) {
+      // Record the hit on-chain so getStats reflects real usage.
+      // Fire-and-forget: a failed counter update must never block the response.
+      recordHitOnChain(qHash).catch(() => undefined);
+
+      markPaymentRedeemed(paymentTxHash);
       emitEvent({
         type: "cache_hit",
         query: input,
@@ -68,8 +79,18 @@ export async function POST(req: NextRequest) {
     //  CACHE MISS — 0.001 MON (first to pay)
     // ══════════════════════════════════════════════════════
     const freshData = await fetchFromSource(intent.type, intent.param);
+
+    // Never seed upstream failures into the cache: a cached {error} would be
+    // served (and charged) to every subsequent reader for the full TTL.
+    // The payment stays unredeemed so the client can retry with the same tx.
+    const parsedFresh = JSON.parse(freshData);
+    if (parsedFresh && typeof parsedFresh === "object" && "error" in parsedFresh) {
+      return NextResponse.json({ error: `Upstream source failed: ${parsedFresh.error}` }, { status: 502 });
+    }
+
     const txHash = await storeResultOnChain(qHash, input, freshData, payer);
 
+    markPaymentRedeemed(paymentTxHash);
     emitEvent({
       type: "query",
       query: input,
