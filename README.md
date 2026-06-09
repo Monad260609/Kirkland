@@ -181,4 +181,4 @@ Built on Monad's sub-second finality and sub-cent transaction costs, micropaymen
 |------|------|-------|
 | **Sofiane Ben Taleb** | Builder | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
 | **Johann Cali** | Builder | [GitHub](https://github.com/JohannCFi) |
-| **Jean** | Builder | [GitHub](https://github.com/vassCaR) |
+| **Jean Vasseur** | Builder | [GitHub](https://github.com/vassCaR) |

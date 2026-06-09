@@ -26,7 +26,7 @@ const team: {
     github: "https://github.com/JohannCFi",
   },
   {
-    name: "Jean",
+    name: "Jean VASSEUR",
     role: "Builder",
     photo: "/team/jean.jpg",
     github: "https://github.com/vassCaR",
