@@ -169,11 +169,13 @@ Check if a MON payment transaction is confirmed on Monad.
 
 | Query | City |
 |---|---|
-| `"weather Denver"` | Denver |
 | `"New York weather"` | New York |
-| `"meteo Paris"` | Paris |
+| `"weather in new york"` | New York |
+| `"weather Paris"` | Paris |
 | `"temperature Tokyo"` | Tokyo |
 | `"forecast London"` | London |
+
+Multi-word cities are fully supported ("buenos aires weather", "weather in los angeles").
 
 ### 3. Country Info (REST Countries)
 
@@ -194,9 +196,11 @@ Check if a MON payment transaction is confirmed on Monad.
 | `"100 usdc in eth"` | USDC → ETH |
 | `"eth -> usdc"` | ETH → USDC (default amount: 1) |
 
-Quotes are fetched live from `api.uniswap.org/v2/quote` and cached on Monad for 60s like any other entry. Requires `UNISWAP_API_KEY` in the gateway env. Supported tokens: ETH, WETH, USDC, USDT, DAI, WBTC, UNI, LINK.
+Quotes are read on-chain from the Uniswap V3 **QuoterV2** contract (`0x61fF…B21e`) on Ethereum mainnet — the gateway tries the 0.05% / 0.3% / 1% fee tiers and returns the best output, with the quoter's own gas estimate. No API key. Cached on Monad for 60s like any other entry. Supported tokens: ETH, WETH, USDC, USDT, DAI, WBTC, UNI, LINK.
 
-**Fallback**: Any query that doesn't match weather, country, or swap patterns is treated as a crypto price lookup.
+### 5. AI (Groq)
+
+Any query that matches no other category and is not a known token symbol is answered by Groq (`llama-3.3-70b-versatile`) and cached on-chain. Requires `GROQ_API_KEY`; without it the gateway returns an explicit 502 and nothing is cached or charged beyond the unredeemed payment (retryable).
 
 ## Key Files
 
@@ -208,11 +212,13 @@ Quotes are fetched live from `api.uniswap.org/v2/quote` and cached on Monad for 
 | `packages/nextjs/app/api/tx-status/route.ts` | Transaction confirmation check |
 | `packages/nextjs/utils/gateway/x402.ts` | Payment verification (checks MON tx on Monad) |
 | `packages/nextjs/utils/gateway/chain.ts` | Viem clients, contract interactions |
-| `packages/nextjs/utils/gateway/detect.ts` | Intent detection (price/weather/country/swap-quote) |
-| `packages/nextjs/utils/gateway/fetchers.ts` | External API fetchers |
-| `packages/nextjs/utils/gateway/uniswap.ts` | Uniswap quote wrapper (Ethereum mainnet) |
+| `packages/nextjs/utils/gateway/detect.ts` | Intent detection (price/weather/country/swap-quote/ai) |
+| `packages/nextjs/utils/gateway/fetchers.ts` | External fetchers (CoinGecko, wttr.in, REST Countries, Groq) |
+| `packages/nextjs/utils/gateway/uniswap.ts` | On-chain QuoterV2 quotes (Ethereum mainnet) |
 | `packages/nextjs/utils/gateway/agentIdentity.ts` | Verify signed agent headers |
 | `packages/nextjs/components/PaymentFlowVisualizer.tsx` | Live x402 round-trip timeline |
+| `packages/nextjs/components/gateway/LiveFeed.tsx` | SSE consumer — real-time paid-query feed |
+| `packages/nextjs/components/gateway/MyCalls.tsx` | Local call history (reads callHistory.ts) |
 | `packages/nextjs/utils/gateway/events.ts` | SSE event system |
 | `packages/nextjs/hooks/gateway/useGatewayQuery.ts` | React hook for full x402 flow |
 | `packages/foundry/contracts/DataCache.sol` | On-chain cache smart contract |
@@ -225,7 +231,7 @@ DATACACHE_ADDRESS=0x8aff...5fca        # DataCache contract address
 SERVER_WALLET=0x...                    # Wallet that receives MON payments
 NEXT_PUBLIC_SERVER_WALLET=0x...        # Same, exposed to client
 GROQ_API_KEY=                          # Optional, for AI queries
-UNISWAP_API_KEY=                       # Required for swap-quote category
+ETHEREUM_RPC_URL=                      # Optional, Ethereum mainnet RPC for Uniswap quotes
 ```
 
 ## Tech Stack

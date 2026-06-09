@@ -6,10 +6,12 @@ An on-chain data caching protocol built on Monad. The first requester seeds the 
 
 Cachemarket was built in one day on February 17, 2026 at **Monad Blitz Denver**, a hackathon challenging developers to build consumer dApps on the Monad blockchain. It finished as a finalist. We wanted to prove a simple idea: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
 
-For **Monad Blitz NYC (June 2026)** the project picks up where Denver left off and adds three new pieces:
+For **Monad Blitz NYC (June 2026)** the project picks up where Denver left off and adds:
 1. **Verifiable agent identity** — every gateway request can carry a signed wallet identity that the server verifies before returning data.
-2. **Uniswap data category** — live swap quotes from Ethereum mainnet pools, cached on Monad like any other entry.
-3. **PaymentFlowVisualizer** — a live timeline of the x402 round-trip so judges (and users) can see exactly what each MON pays for.
+2. **Uniswap data category** — swap quotes read directly from Uniswap V3 pools on Ethereum mainnet (QuoterV2, no API key), cached on Monad like any other entry.
+3. **AI category** — free-form questions answered by Groq (Llama 3.3 70B) and cached on-chain.
+4. **PaymentFlowVisualizer** — a live timeline of the x402 round-trip so judges (and users) can see exactly what each MON pays for.
+5. **Live activity feed** — every paid query streams onto the dashboard in real time (SSE), with verified agent badges.
 
 ## How it works
 
@@ -42,10 +44,10 @@ User / Agent                                            (optional)
 | Crypto prices | CoinGecko | "ETH price", "price of bitcoin", "SOL" |
 | Weather | wttr.in | "New York weather", "weather in Paris" |
 | Country info | REST Countries | "France info", "Japan country" |
-| Swap quotes | Uniswap (Ethereum mainnet) | "quote 1 ETH to USDC", "1 WBTC in DAI" |
-| AI fallback | Groq (Llama 3.3 70B) | Any other question (optional) |
+| Swap quotes | Uniswap V3 QuoterV2 (on-chain, Ethereum mainnet) | "quote 1 ETH to USDC", "1 WBTC in DAI" |
+| AI fallback | Groq (Llama 3.3 70B) | Any other question |
 
-Uniswap quotes are fetched live from `api.uniswap.org`. The result — amount out, rate, route, gas estimate — is cached on Monad for 60s; the response page also exposes an "Execute on Uniswap" deep link for the human-side swap.
+Uniswap quotes are read directly from the QuoterV2 contract across the three standard fee tiers — no API key, nothing that can be revoked. The result — amount out, rate, winning pool, gas estimate — is cached on Monad for 60s; the response page also exposes an "Execute on Uniswap" deep link for the human-side swap.
 
 ## Setup
 
@@ -63,9 +65,9 @@ Uniswap quotes are fetched live from `api.uniswap.org`. The result — amount ou
    - `BACKEND_PRIVATE_KEY` — Private key of the DataCache owner (used to write to chain)
    - `SERVER_WALLET` / `NEXT_PUBLIC_SERVER_WALLET` — Public address matching the key above
    - `DATACACHE_ADDRESS` — Deployed DataCache contract address (defaults to the Denver deployment)
-   - `UNISWAP_API_KEY` — Uniswap API key for the swap-quote category (other categories work without it)
+   - `GROQ_API_KEY` — Groq API key for the AI category (free at console.groq.com; without it AI queries return an explicit 502)
    - `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` — WalletConnect project ID (optional)
-   - `GROQ_API_KEY` — Groq API key for AI fallback queries (optional)
+   - `ETHEREUM_RPC_URL` — Ethereum mainnet RPC for Uniswap quotes (optional, defaults to a public endpoint)
 
 4. Start the app:
    ```bash
@@ -107,15 +109,16 @@ const result = await client.query("weather in New York");
 const headers = await createAgentHeaders("0x..."); // { X-Agent-Id, X-Agent-Sig, X-Agent-Ts }
 await fetch("https://your-gateway.example.com/api/query", { method: "POST", headers, body: ... });
 
-// Execute a Uniswap swap (Ethereum mainnet)
+// Execute a real Uniswap V3 swap on Ethereum mainnet
+// (QuoterV2 quote → approve if ERC-20 input → SwapRouter02 exactInputSingle)
 const swap = await executeSwap({
   tokenIn: "eth",
   tokenOut: "usdc",
   amountIn: "0.5",
   privateKey: "0x...",
-  uniswapApiKey: "...",
+  slippageBps: 50, // 0.5%
 });
-console.log(swap.txHash, swap.expectedAmountOut);
+console.log(swap.txHash, swap.quotedAmountOut, swap.feeTier);
 ```
 
 ## Smart contract
