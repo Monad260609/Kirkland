@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
@@ -33,6 +33,14 @@ interface CachePreCheck {
 }
 
 export default function MarketResultPage() {
+  return (
+    <Suspense fallback={null}>
+      <MarketResultPageInner />
+    </Suspense>
+  );
+}
+
+function MarketResultPageInner() {
   const searchParams = useSearchParams();
   const category = searchParams.get("cat") ?? "";
   const query = searchParams.get("q") ?? "";
