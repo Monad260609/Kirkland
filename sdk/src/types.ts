@@ -1,6 +1,6 @@
 // ── Config ─────────────────────────────────────────────────
 
-export interface CacheMarketConfig {
+export interface KirklandConfig {
   /** Private key of the contract owner — required for cache misses (storeResult) */
   privateKey?: string;
   /** Override the default Monad Testnet RPC URL */

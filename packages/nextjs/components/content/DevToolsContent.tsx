@@ -5,13 +5,13 @@ import { motion } from "framer-motion";
 import { Terminal } from "~~/components/ui/terminal";
 
 const TERMINAL_LINES = [
-  { text: 'cachemarket query "price of ETH"', type: "command" as const, delay: 500 },
+  { text: 'kirkland query "price of ETH"', type: "command" as const, delay: 500 },
   { text: "Checking on-chain cache...", type: "info" as const, delay: 200 },
   { text: "Cache miss — fetching from CoinGecko...", type: "error" as const, delay: 600 },
   { text: "Stored on-chain (tx: 0xab3f...c821)", type: "success" as const, delay: 400 },
   { text: "ETH: $1,648.23 — Cost: 0.001 MON (seeder)", type: "output" as const, delay: 100 },
   { text: "", type: "output" as const, delay: 800 },
-  { text: 'cachemarket query "price of ETH"', type: "command" as const, delay: 400 },
+  { text: 'kirkland query "price of ETH"', type: "command" as const, delay: 400 },
   { text: "Checking on-chain cache...", type: "info" as const, delay: 200 },
   { text: "Cache hit!", type: "success" as const, delay: 300 },
   { text: "ETH: $1,648.23 — Cost: 0.0001 MON (10x cheaper)", type: "output" as const, delay: 100 },
@@ -31,7 +31,7 @@ export function DevToolsContent() {
           Dev Tools
         </h1>
         <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
-          CLI tool and SDK for querying on-chain cached data, seeding the cache, and integrating Cachemarket into your
+          CLI tool and SDK for querying on-chain cached data, seeding the cache, and integrating Kirkland into your
           application.
         </p>
       </motion.div>
@@ -58,7 +58,7 @@ export function DevToolsContent() {
           automatically.
         </motion.p>
 
-        <Terminal lines={TERMINAL_LINES} title="cachemarket-cli" />
+        <Terminal lines={TERMINAL_LINES} title="kirkland-cli" />
       </section>
 
       {/* SDK */}
@@ -79,7 +79,7 @@ export function DevToolsContent() {
           transition={{ delay: 0.55 }}
           className="text-white/70 text-sm text-center max-w-lg mb-6"
         >
-          Integrate Cachemarket into any application. Query cached data, seed the cache, and manage your on-chain data —
+          Integrate Kirkland into any application. Query cached data, seed the cache, and manage your on-chain data —
           all from a simple SDK.
         </motion.p>
 
@@ -101,14 +101,14 @@ export function DevToolsContent() {
           <pre className="p-4 font-mono text-sm overflow-x-auto">
             <code>
               <span className="text-purple-400">import</span>
-              <span className="text-white">{" { CacheMarket } "}</span>
+              <span className="text-white">{" { Kirkland } "}</span>
               <span className="text-purple-400">from</span>
-              <span className="text-green-400"> &quot;@cachemarket/sdk&quot;</span>
+              <span className="text-green-400"> &quot;@kirkland/sdk&quot;</span>
               {"\n\n"}
               <span className="text-purple-400">const</span>
               <span className="text-white"> client = </span>
               <span className="text-purple-400">new</span>
-              <span className="text-blue-400"> CacheMarket</span>
+              <span className="text-blue-400"> Kirkland</span>
               <span className="text-white">{"({"}</span>
               {"\n"}
               <span className="text-white">{"  network: "}</span>

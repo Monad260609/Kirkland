@@ -160,7 +160,7 @@ function displayData(type: IntentType, data: Record<string, unknown>) {
 
 export async function queryCommand(query: string) {
   line();
-  line(`${C.bold}${C.purple}⬡  Cachemarket${C.reset}  ${C.dim}on-chain data protocol${C.reset}`);
+  line(`${C.bold}${C.purple}⬡  Kirkland${C.reset}  ${C.dim}on-chain data protocol${C.reset}`);
   line(`${C.dim}${"─".repeat(50)}${C.reset}`);
   line(`   ${C.bold}Query${C.reset}  ${C.cyan}${query}${C.reset}`);
   line();
@@ -257,7 +257,7 @@ export async function queryCommand(query: string) {
 
 export async function statsCommand() {
   line();
-  line(`${C.bold}${C.purple}⬡  Cachemarket${C.reset}  ${C.dim}On-Chain Stats${C.reset}`);
+  line(`${C.bold}${C.purple}⬡  Kirkland${C.reset}  ${C.dim}On-Chain Stats${C.reset}`);
   line(`${C.dim}${"─".repeat(40)}${C.reset}`);
 
   step("Reading contract on Monad Testnet…");

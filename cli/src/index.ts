@@ -6,8 +6,8 @@ import { queryCommand, statsCommand } from "./commands.js";
 const program = new Command();
 
 program
-  .name("cachemarket")
-  .description("CLI for the Cachemarket on-chain data protocol (Monad Testnet)")
+  .name("kirkland")
+  .description("CLI for the Kirkland on-chain data protocol (Monad Testnet)")
   .version("0.1.0");
 
 program

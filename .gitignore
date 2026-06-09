@@ -43,3 +43,6 @@ opencode.json
 # lock files (keep only the root package-lock.json)
 pnpm-lock.yaml
 yarn.lock
+
+# yarn berry (legacy — project migrated to npm workspaces)
+.yarn/

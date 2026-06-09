@@ -10,7 +10,7 @@ const MAX_TIMESTAMP_AGE_MS = 60_000; // 60 seconds replay protection
  *   X-Agent-Sig: <signature>
  *   X-Agent-Ts:  <timestamp>
  *
- * The agent must sign: `cachemarket-agent:<walletAddress>:<timestamp>`
+ * The agent must sign: `kirkland-agent:<walletAddress>:<timestamp>`
  *
  * Returns { agentId, verified: true } or { agentId: "0x0...", verified: false }
  */
@@ -41,7 +41,7 @@ export async function verifyAgentIdentity(headers: Headers): Promise<{
   }
 
   // Verify signature
-  const message = `cachemarket-agent:${agentId}:${agentTs}`;
+  const message = `kirkland-agent:${agentId}:${agentTs}`;
 
   try {
     const valid = await verifyMessage({

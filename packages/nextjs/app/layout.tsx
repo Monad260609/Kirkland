@@ -9,7 +9,7 @@ import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 const vt323 = VT323({ weight: "400", subsets: ["latin"], variable: "--font-vt323" });
 
 export const metadata = getMetadata({
-  title: "Cachemarket",
+  title: "Kirkland",
   description: "x402 Universal Access Point — Data Freshness Marketplace",
 });
 

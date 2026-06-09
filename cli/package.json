@@ -1,10 +1,10 @@
 {
-  "name": "@cachemarket/cli",
+  "name": "@kirkland/cli",
   "version": "0.1.0",
-  "description": "CLI for the Cachemarket on-chain data protocol",
+  "description": "CLI for the Kirkland on-chain data protocol",
   "type": "module",
   "bin": {
-    "cachemarket": "./bin/cachemarket"
+    "kirkland": "./bin/kirkland"
   },
   "scripts": {
     "dev": "tsx src/index.ts",

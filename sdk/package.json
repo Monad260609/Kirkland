@@ -1,7 +1,7 @@
 {
-  "name": "@cachemarket/sdk",
+  "name": "@kirkland/sdk",
   "version": "0.1.0",
-  "description": "SDK for the Cachemarket on-chain data protocol (Monad Testnet)",
+  "description": "SDK for the Kirkland on-chain data protocol (Monad Testnet)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

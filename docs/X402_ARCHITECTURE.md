@@ -1,8 +1,8 @@
-# Cachemarket — x402 Data Freshness Marketplace
+# Kirkland — x402 Data Freshness Marketplace
 
 ## Overview
 
-Cachemarket is a pay-per-call API gateway built on **Monad testnet**. It uses the HTTP 402 protocol to monetize API access, where the **first caller pays more** (cache miss) and **subsequent callers pay less** (cache hit) within a 60-second TTL window. All data is stored on-chain via the `DataCache` smart contract.
+Kirkland is a pay-per-call API gateway built on **Monad testnet**. It uses the HTTP 402 protocol to monetize API access, where the **first caller pays more** (cache miss) and **subsequent callers pay less** (cache hit) within a 60-second TTL window. All data is stored on-chain via the `DataCache` smart contract.
 
 ## Architecture
 
@@ -30,7 +30,7 @@ X-Agent-Sig: <signature>
 X-Agent-Ts:  <unix millis>
 ```
 
-The agent signs the EIP-191 message `cachemarket-agent:<walletAddress>:<timestamp>` with their wallet key. The server verifies the signature with `viem.verifyMessage` and rejects timestamps older than 60s (replay protection). Verified requests get `agentVerified: true` and the `agentId` stamped onto the response, and the agent id is broadcast on the SSE event stream. Missing or invalid signatures fall through anonymously — the payment flow is unchanged so existing clients keep working.
+The agent signs the EIP-191 message `kirkland-agent:<walletAddress>:<timestamp>` with their wallet key. The server verifies the signature with `viem.verifyMessage` and rejects timestamps older than 60s (replay protection). Verified requests get `agentVerified: true` and the `agentId` stamped onto the response, and the agent id is broadcast on the SSE event stream. Missing or invalid signatures fall through anonymously — the payment flow is unchanged so existing clients keep working.
 
 Server: `packages/nextjs/utils/gateway/agentIdentity.ts`
 Client helpers: `sdk/src/agentIdentity.ts` (`createAgentHeaders`, `getAgentAddress`).

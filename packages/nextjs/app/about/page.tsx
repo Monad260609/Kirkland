@@ -93,7 +93,7 @@ export default function AboutPage() {
           transition={{ delay: 0.3 }}
           className="text-white/40 text-lg mb-14 tracking-wide"
         >
-          The team behind Cachemarket
+          The team behind Kirkland
         </motion.p>
 
         {/* Team cards */}

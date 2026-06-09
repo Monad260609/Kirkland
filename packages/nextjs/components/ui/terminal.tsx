@@ -17,7 +17,7 @@ interface TerminalProps {
   typingSpeed?: number;
 }
 
-export function Terminal({ lines, title = "cachemarket-cli", className, typingSpeed = 30 }: TerminalProps) {
+export function Terminal({ lines, title = "kirkland-cli", className, typingSpeed = 30 }: TerminalProps) {
   const [displayedLines, setDisplayedLines] = useState<{ text: string; type: string; typing: boolean }[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [currentCharIndex, setCurrentCharIndex] = useState(0);

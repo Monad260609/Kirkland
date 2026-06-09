@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { CacheMarket } from "../src/index.js";
+import { Kirkland } from "../src/index.js";
 
-const client = new CacheMarket({
+const client = new Kirkland({
   privateKey: process.env.PRIVATE_KEY,
   groqApiKey: process.env.GROQ_API_KEY,
 });
@@ -24,7 +24,7 @@ async function run(label: string, fn: () => Promise<void>) {
 // ── tests ──────────────────────────────────────────────────
 
 async function main() {
-  console.log("\n⬡  Cachemarket SDK — Test Suite\n" + "─".repeat(40));
+  console.log("\n⬡  Kirkland SDK — Test Suite\n" + "─".repeat(40));
 
   // 1. Stats (read-only, no key needed)
   await run("getStats()", async () => {
