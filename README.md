@@ -2,11 +2,11 @@
 
 An on-chain data caching protocol built on Monad. The first requester seeds the cache and pays full price; every subsequent requester reads from on-chain storage for ~10x less. No API keys, no subscriptions — just a wallet.
 
-## Built for Monad Blitz Denver 2026, revived for Monad Blitz NYC
+## Built for Monad Blitz NYC 2026
 
-Cachemarket was built in one day on February 17, 2026 at **Monad Blitz Denver**, a hackathon challenging developers to build consumer dApps on the Monad blockchain. It finished as a finalist. We wanted to prove a simple idea: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
+Cachemarket was built at **Monad Blitz NYC** (June 9, 2026, @ ETHConf), a one-day hackathon by the Monad Foundation challenging developers to ship fast on Monad's high-performance EVM. The idea is simple: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
 
-For **Monad Blitz NYC (June 9, 2026, @ ETHConf)** the project picks up where Denver left off and adds:
+Highlights:
 1. **Verifiable agent identity** — every gateway request can carry a signed wallet identity that the server verifies before returning data.
 2. **Uniswap data category** — swap quotes read directly from Uniswap V3 pools on Ethereum mainnet (QuoterV2, no API key), cached on Monad like any other entry.
 3. **AI category** — free-form questions answered by Groq (Llama 3.3 70B) and cached on-chain.
@@ -177,20 +177,8 @@ Built on Monad's sub-second finality and sub-cent transaction costs, micropaymen
 
 ## Team
 
-### Monad Blitz NYC (June 9, 2026)
-
 | Name | Role | Links |
 |------|------|-------|
-| **Sofiane Ben Taleb** | Full-Stack & Smart Contracts | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
+| **Sofiane Ben Taleb** | Builder | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
 | **Johann Cali** | Builder | [GitHub](https://github.com/JohannCFi) |
-| **Jean** | Builder | [GitHub](https://github.com/vassCaR) |
-
-### Monad Blitz Denver (February 17, 2026) — original protocol
-
-Built in one day by three students from **DeVinci Blockchain** (Paris, France). Finalist.
-
-| Name | Role | Links |
-|------|------|-------|
-| **Sofiane Ben Taleb** | Full-Stack & Smart Contracts | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
-| **Armand Sechon** | Backend & Infrastructure | [GitHub](https://github.com/STOOKEEE) · [LinkedIn](https://www.linkedin.com/in/armand-sechon/) |
-| **Noé Wales** | Frontend & Design | [GitHub](https://github.com/CHAAIISE) · [LinkedIn](https://www.linkedin.com/in/no%C3%A9-w/) |
+| **Jean Vasseur** | Builder | [GitHub](https://github.com/vassCaR) |

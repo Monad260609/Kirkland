@@ -63,8 +63,8 @@ async function main() {
   });
 
   // 5. query weather
-  await run("query('weather in Denver')", async () => {
-    const result = await client.query("weather in Denver");
+  await run("query('weather in New York')", async () => {
+    const result = await client.query("weather in New York");
     console.log(`     cached=${result.cached}  source=${result.source}`);
     console.log(`     data=`, result.data);
     pass("Weather fetched");

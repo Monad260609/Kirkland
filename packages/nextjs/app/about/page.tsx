@@ -5,27 +5,31 @@ import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import { IconBrandGithub, IconBrandLinkedin } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 
-const team = [
+const team: {
+  name: string;
+  role: string;
+  photo: string;
+  github: string;
+  linkedin?: string;
+}[] = [
   {
     name: "Sofiane BEN TALEB",
-    role: "Full-Stack & Smart Contracts",
+    role: "Builder",
     photo: "/team/sofiane.jpg",
     github: "https://github.com/gamween",
     linkedin: "https://www.linkedin.com/in/sofiane-ben-taleb/",
   },
   {
-    name: "Armand SECHON",
-    role: "Backend & Infrastructure",
-    photo: "/team/armand.jpg",
-    github: "https://github.com/STOOOKEEE",
-    linkedin: "https://www.linkedin.com/in/armand-sechon/",
+    name: "Johann CALI",
+    role: "Builder",
+    photo: "/team/johann.jpg",
+    github: "https://github.com/JohannCFi",
   },
   {
-    name: "Noé WALES",
-    role: "Frontend & Design",
-    photo: "/team/noe.jpg",
-    github: "https://github.com/CHAAIISE",
-    linkedin: "https://www.linkedin.com/in/no%C3%A9-w/",
+    name: "Jean VASSEUR",
+    role: "Builder",
+    photo: "/team/jean.jpg",
+    github: "https://github.com/vassCaR",
   },
 ];
 
@@ -126,31 +130,32 @@ export default function AboutPage() {
                 >
                   <IconBrandGithub size={22} />
                 </a>
-                <a
-                  href={member.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/40 hover:text-white transition-colors"
-                  aria-label={`${member.name} LinkedIn`}
-                >
-                  <IconBrandLinkedin size={22} />
-                </a>
+                {member.linkedin && (
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/40 hover:text-white transition-colors"
+                    aria-label={`${member.name} LinkedIn`}
+                  >
+                    <IconBrandLinkedin size={22} />
+                  </a>
+                )}
               </div>
             </motion.div>
           ))}
         </div>
-        {/* DeVinci Blockchain */}
+        {/* Event */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.65 }}
           className="max-w-2xl text-center"
         >
-          <h2 className="text-3xl text-white tracking-wide mb-6">DeVinci Blockchain</h2>
+          <h2 className="text-3xl text-white tracking-wide mb-6">Monad Blitz NYC</h2>
           <p className="text-white/60 text-lg md:text-xl leading-relaxed">
-            We are three students from the <span className="text-white font-semibold">DeVinci Blockchain</span>{" "}
-            association, based in Paris, France. Our association explores the frontiers of blockchain technology through
-            hackathons, research, and hands-on building.
+            Built in one day at <span className="text-white font-semibold">Monad Blitz NYC</span> (June 9, 2026) — the
+            one-day hackathon where builders ship fast on Monad&apos;s high-performance EVM.
           </p>
         </motion.div>
       </div>
