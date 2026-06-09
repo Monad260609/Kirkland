@@ -1,7 +1,11 @@
-// Ethereum mainnet token addresses for Uniswap quoting.
-// Native ETH is represented as the zero address — Uniswap's API normalizes it to WETH.
+import { createPublicClient, formatUnits, http, parseUnits } from "viem";
+import { mainnet } from "viem/chains";
+
+// Ethereum mainnet token addresses. Quotes read Uniswap V3 pools directly
+// on-chain (QuoterV2) — no API key, nothing to revoke or rate-limit.
+// Native ETH is quoted through WETH.
 export const TOKEN_ADDRESSES: Record<string, `0x${string}`> = {
-  eth: "0x0000000000000000000000000000000000000000",
+  eth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
   weth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
   usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -22,107 +26,125 @@ export const TOKEN_DECIMALS: Record<string, number> = {
   link: 18,
 };
 
+export const QUOTER_V2_ADDRESS = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e" as const;
+
+export const QUOTER_V2_ABI = [
+  {
+    name: "quoteExactInputSingle",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        components: [
+          { name: "tokenIn", type: "address" },
+          { name: "tokenOut", type: "address" },
+          { name: "amountIn", type: "uint256" },
+          { name: "fee", type: "uint24" },
+          { name: "sqrtPriceLimitX96", type: "uint160" },
+        ],
+      },
+    ],
+    outputs: [
+      { name: "amountOut", type: "uint256" },
+      { name: "sqrtPriceX96After", type: "uint160" },
+      { name: "initializedTicksCrossed", type: "uint32" },
+      { name: "gasEstimate", type: "uint256" },
+    ],
+  },
+] as const;
+
+// 0.05% / 0.3% / 1% — the standard V3 fee tiers for majors.
+const FEE_TIERS = [500, 3000, 10000] as const;
+
+const FEE_LABEL: Record<number, string> = {
+  500: "0.05%",
+  3000: "0.3%",
+  10000: "1%",
+};
+
+const ethereumClient = createPublicClient({
+  chain: mainnet,
+  transport: http(process.env.ETHEREUM_RPC_URL ?? "https://ethereum-rpc.publicnode.com"),
+});
+
 export interface UniswapQuote {
   tokenIn: string;
   tokenOut: string;
   amountIn: string;
   amountOut: string;
-  rate: string; // amountOut / amountIn, displayed as text
-  route: string; // human-readable hop sequence ("ETH → USDC" or "ETH → WETH → USDC")
-  estimatedGasUSD?: string;
-  chainId: 1; // Ethereum mainnet — Monad caches the quote, mainnet has the pools
+  rate: string;
+  route: string; // "ETH → USDC · 0.05% pool"
+  feeTier: string;
+  estimatedGas: string; // swap gas estimate in gas units, from QuoterV2
+  chainId: 1; // quotes read Ethereum mainnet pools; the result is cached on Monad
 }
-
-interface UniswapApiQuote {
-  amountDecimals?: string | number;
-  quoteDecimals?: string | number;
-  amount?: string;
-  quote?: string;
-  gasUseEstimateUSD?: string;
-  route?: Array<Array<{ tokenIn?: { symbol?: string }; tokenOut?: { symbol?: string } }>>;
-}
-
-const UNISWAP_API_URL = "https://api.uniswap.org/v2/quote";
 
 /**
- * Fetches a swap quote from Uniswap's public API.
- *
- * Throws if the API rejects or the response is malformed.
+ * Quote tokenIn→tokenOut on Uniswap V3 by calling QuoterV2 on Ethereum
+ * mainnet. Tries the three standard fee tiers and returns the best output.
  */
 export async function fetchUniswapQuote(
   tokenInSym: string,
   tokenOutSym: string,
   amountIn: string,
 ): Promise<UniswapQuote> {
-  const apiKey = process.env.UNISWAP_API_KEY;
-  if (!apiKey) throw new Error("UNISWAP_API_KEY is not set");
-
   const inSym = tokenInSym.toLowerCase();
   const outSym = tokenOutSym.toLowerCase();
-  const inAddr = TOKEN_ADDRESSES[inSym];
-  const outAddr = TOKEN_ADDRESSES[outSym];
-  if (!inAddr) throw new Error(`Unknown token: ${tokenInSym}`);
-  if (!outAddr) throw new Error(`Unknown token: ${tokenOutSym}`);
+  const tokenIn = TOKEN_ADDRESSES[inSym];
+  const tokenOut = TOKEN_ADDRESSES[outSym];
+  if (!tokenIn) throw new Error(`Unknown token: ${tokenInSym}`);
+  if (!tokenOut) throw new Error(`Unknown token: ${tokenOutSym}`);
+  if (tokenIn === tokenOut) throw new Error("tokenIn and tokenOut are the same asset");
 
-  const decimals = TOKEN_DECIMALS[inSym] ?? 18;
-  const rawAmount = BigInt(Math.round(parseFloat(amountIn) * 10 ** decimals)).toString();
+  const inDecimals = TOKEN_DECIMALS[inSym] ?? 18;
+  const outDecimals = TOKEN_DECIMALS[outSym] ?? 18;
+  const rawAmountIn = parseUnits(amountIn, inDecimals);
 
-  const res = await fetch(UNISWAP_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      origin: "https://app.uniswap.org",
-    },
-    body: JSON.stringify({
-      tokenInChainId: 1,
-      tokenOutChainId: 1,
-      tokenIn: inAddr,
-      tokenOut: outAddr,
-      amount: rawAmount,
-      type: "EXACT_INPUT",
-      // Zero-address swapper — quotes are simulated without an account.
-      swapper: "0x0000000000000000000000000000000000000000",
-      slippageTolerance: 50,
-      configs: [{ routingType: "CLASSIC", protocols: ["V2", "V3", "MIXED"] }],
-    }),
-  });
+  let best: { amountOut: bigint; gasEstimate: bigint; fee: number } | null = null;
 
-  if (!res.ok) {
-    throw new Error(`Uniswap quote failed: ${res.status} ${await res.text()}`);
+  for (const fee of FEE_TIERS) {
+    try {
+      const { result } = await ethereumClient.simulateContract({
+        address: QUOTER_V2_ADDRESS,
+        abi: QUOTER_V2_ABI,
+        functionName: "quoteExactInputSingle",
+        args: [{ tokenIn, tokenOut, amountIn: rawAmountIn, fee, sqrtPriceLimitX96: 0n }],
+      });
+      const [amountOut, , , gasEstimate] = result;
+      if (amountOut > 0n && (!best || amountOut > best.amountOut)) {
+        best = { amountOut, gasEstimate, fee };
+      }
+    } catch {
+      // No pool at this fee tier for the pair — try the next one.
+    }
   }
 
-  const json = (await res.json()) as { quote?: UniswapApiQuote } & UniswapApiQuote;
-  const q: UniswapApiQuote = json.quote ?? json;
+  if (!best) {
+    throw new Error(`No Uniswap V3 pool found for ${tokenInSym.toUpperCase()}/${tokenOutSym.toUpperCase()}`);
+  }
 
-  const amountOutDecimal = String(q.quoteDecimals ?? q.amountDecimals ?? q.amount ?? "0");
-  const route = formatRoute(q.route, inSym, outSym);
-  const rate = formatRate(amountIn, amountOutDecimal);
+  const amountOutDecimal = formatUnits(best.amountOut, outDecimals);
+  const displayIn = inSym === "weth" ? "WETH" : tokenInSym.toUpperCase();
+  const displayOut = outSym === "weth" ? "WETH" : tokenOutSym.toUpperCase();
 
   return {
-    tokenIn: tokenInSym.toUpperCase(),
-    tokenOut: tokenOutSym.toUpperCase(),
+    tokenIn: displayIn,
+    tokenOut: displayOut,
     amountIn,
     amountOut: amountOutDecimal,
-    rate,
-    route,
-    estimatedGasUSD: q.gasUseEstimateUSD,
+    rate: formatRate(amountIn, amountOutDecimal),
+    route: `${displayIn} → ${displayOut} · ${FEE_LABEL[best.fee]} pool`,
+    feeTier: FEE_LABEL[best.fee],
+    estimatedGas: best.gasEstimate.toString(),
     chainId: 1,
   };
-}
-
-function formatRoute(route: UniswapApiQuote["route"] | undefined, fallbackIn: string, fallbackOut: string): string {
-  if (!route || route.length === 0) {
-    return `${fallbackIn.toUpperCase()} → ${fallbackOut.toUpperCase()}`;
-  }
-  const path = route[0];
-  const hops = path.map(hop => hop.tokenIn?.symbol ?? "?").concat(path[path.length - 1]?.tokenOut?.symbol ?? "?");
-  return hops.join(" → ");
 }
 
 function formatRate(amountIn: string, amountOut: string): string {
   const a = parseFloat(amountIn);
   const b = parseFloat(amountOut);
   if (!a || !b) return "—";
-  return (b / a).toFixed(6);
+  return (b / a).toLocaleString("en-US", { maximumFractionDigits: 6 });
 }

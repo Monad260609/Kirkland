@@ -402,7 +402,7 @@ function SwapQuoteResult({ data }: { data: Record<string, unknown> }) {
   const amountOut = String(data.amountOut ?? "—");
   const rate = String(data.rate ?? "—");
   const route = String(data.route ?? `${tokenIn} → ${tokenOut}`);
-  const gas = typeof data.estimatedGasUSD === "string" ? data.estimatedGasUSD : null;
+  const gas = typeof data.estimatedGas === "string" ? data.estimatedGas : null;
 
   return (
     <div className="space-y-4">
@@ -429,8 +429,8 @@ function SwapQuoteResult({ data }: { data: Record<string, unknown> }) {
           <p className="text-white text-lg font-mono">{route}</p>
         </div>
         <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
-          <p className="text-white/50 text-sm mb-1">Est. gas</p>
-          <p className="text-white text-lg font-mono">{gas ? `$${gas}` : "—"}</p>
+          <p className="text-white/50 text-sm mb-1">Est. swap gas</p>
+          <p className="text-white text-lg font-mono">{gas ? `${Number(gas).toLocaleString()} gas` : "—"}</p>
         </div>
       </div>
 
@@ -444,7 +444,7 @@ function SwapQuoteResult({ data }: { data: Record<string, unknown> }) {
       </a>
 
       <p className="text-white/40 text-xs text-center">
-        Quote sourced from Uniswap on Ethereum mainnet · cached on Monad for 60s
+        Quote read on-chain from Uniswap V3 (QuoterV2, Ethereum mainnet) · cached on Monad for 60s
       </p>
     </div>
   );
