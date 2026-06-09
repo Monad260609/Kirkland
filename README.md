@@ -53,7 +53,7 @@ Uniswap quotes are read directly from the QuoterV2 contract across the three sta
 
 1. Install dependencies:
    ```bash
-   yarn install
+   npm install
    ```
 
 2. Copy the environment file and fill in your values:
@@ -71,7 +71,7 @@ Uniswap quotes are read directly from the QuoterV2 contract across the three sta
 
 4. Start the app:
    ```bash
-   yarn start
+   npm run start
    ```
 
    Visit `http://localhost:3000`.

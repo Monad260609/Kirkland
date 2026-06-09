@@ -432,7 +432,7 @@ monad-blitz-denver/
 │       └── routes/query.ts                     # /api/query route handler
 ├── cli/                                        # cachemarket CLI tool
 ├── sdk/                                        # @cachemarket/sdk
-└── package.json                               # Monorepo root (yarn workspaces)
+└── package.json                               # Monorepo root (npm workspaces)
 ```
 
 ---
@@ -447,7 +447,7 @@ monad-blitz-denver/
 ### 1. Install dependencies
 
 ```bash
-yarn install
+npm install
 ```
 
 ### 2. Configure environment
@@ -472,9 +472,9 @@ The DataCache contract is already deployed on Monad Testnet — see `packages/fo
 ### 3. Start the Next.js app
 
 ```bash
-yarn start
+npm run start
 # or
-yarn workspace @se-2/nextjs dev
+npm run dev -w @se-2/nextjs
 ```
 
 Visit `http://localhost:3000`
@@ -483,13 +483,13 @@ Visit `http://localhost:3000`
 
 ```bash
 # Start local Foundry chain
-yarn chain
+npm run chain
 
 # Deploy to local chain
-yarn deploy
+npm run deploy
 
 # Deploy to Monad Testnet
-yarn foundry:deploy
+npm run foundry:deploy
 ```
 
 ### 5. (Optional) Run the standalone backend
@@ -507,11 +507,11 @@ npm run dev
 ### 6. Build for production
 
 ```bash
-yarn next:build
+npm run next:build
 ```
 
 Or deploy directly to Vercel:
 
 ```bash
-yarn vercel
+npm run vercel
 ```
