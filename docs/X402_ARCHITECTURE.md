@@ -20,6 +20,21 @@ Cachemarket is a pay-per-call API gateway built on **Monad testnet**. It uses th
                      └──────────────┘
 ```
 
+## Agent Identity (optional)
+
+Every `/api/query` POST can carry a signed agent identity in three extra headers:
+
+```
+X-Agent-Id:  <walletAddress>
+X-Agent-Sig: <signature>
+X-Agent-Ts:  <unix millis>
+```
+
+The agent signs the EIP-191 message `cachemarket-agent:<walletAddress>:<timestamp>` with their wallet key. The server verifies the signature with `viem.verifyMessage` and rejects timestamps older than 60s (replay protection). Verified requests get `agentVerified: true` and the `agentId` stamped onto the response, and the agent id is broadcast on the SSE event stream. Missing or invalid signatures fall through anonymously — the payment flow is unchanged so existing clients keep working.
+
+Server: `packages/nextjs/utils/gateway/agentIdentity.ts`
+Client helpers: `sdk/src/agentIdentity.ts` (`createAgentHeaders`, `getAgentAddress`).
+
 ## Payment Flow (x402)
 
 ### Cache MISS — First caller, pays 0.001 MON
@@ -170,7 +185,18 @@ Check if a MON payment transaction is confirmed on Monad.
 | `"Brazil population"` | Brazil |
 | `"capital of Spain"` | Spain |
 
-**Fallback**: Any query that doesn't match weather or country patterns is treated as a crypto price lookup.
+### 4. Swap Quotes (Uniswap on Ethereum mainnet)
+
+| Query | Pair |
+|---|---|
+| `"quote 1 eth to usdc"` | ETH → USDC |
+| `"swap 1 wbtc to dai"` | WBTC → DAI |
+| `"100 usdc in eth"` | USDC → ETH |
+| `"eth -> usdc"` | ETH → USDC (default amount: 1) |
+
+Quotes are fetched live from `api.uniswap.org/v2/quote` and cached on Monad for 60s like any other entry. Requires `UNISWAP_API_KEY` in the gateway env. Supported tokens: ETH, WETH, USDC, USDT, DAI, WBTC, UNI, LINK.
+
+**Fallback**: Any query that doesn't match weather, country, or swap patterns is treated as a crypto price lookup.
 
 ## Key Files
 
@@ -182,8 +208,11 @@ Check if a MON payment transaction is confirmed on Monad.
 | `packages/nextjs/app/api/tx-status/route.ts` | Transaction confirmation check |
 | `packages/nextjs/utils/gateway/x402.ts` | Payment verification (checks MON tx on Monad) |
 | `packages/nextjs/utils/gateway/chain.ts` | Viem clients, contract interactions |
-| `packages/nextjs/utils/gateway/detect.ts` | Intent detection (price/weather/country) |
+| `packages/nextjs/utils/gateway/detect.ts` | Intent detection (price/weather/country/swap-quote) |
 | `packages/nextjs/utils/gateway/fetchers.ts` | External API fetchers |
+| `packages/nextjs/utils/gateway/uniswap.ts` | Uniswap quote wrapper (Ethereum mainnet) |
+| `packages/nextjs/utils/gateway/agentIdentity.ts` | Verify signed agent headers |
+| `packages/nextjs/components/PaymentFlowVisualizer.tsx` | Live x402 round-trip timeline |
 | `packages/nextjs/utils/gateway/events.ts` | SSE event system |
 | `packages/nextjs/hooks/gateway/useGatewayQuery.ts` | React hook for full x402 flow |
 | `packages/foundry/contracts/DataCache.sol` | On-chain cache smart contract |
@@ -196,6 +225,7 @@ DATACACHE_ADDRESS=0x8aff...5fca        # DataCache contract address
 SERVER_WALLET=0x...                    # Wallet that receives MON payments
 NEXT_PUBLIC_SERVER_WALLET=0x...        # Same, exposed to client
 GROQ_API_KEY=                          # Optional, for AI queries
+UNISWAP_API_KEY=                       # Required for swap-quote category
 ```
 
 ## Tech Stack
@@ -204,4 +234,5 @@ GROQ_API_KEY=                          # Optional, for AI queries
 - **Smart Contract**: Solidity 0.8.20, Foundry
 - **Blockchain**: Monad Testnet (chain ID 10143)
 - **On-chain interaction**: viem
-- **External APIs**: CoinGecko, wttr.in, REST Countries
+- **External APIs**: CoinGecko, wttr.in, REST Countries, Uniswap
+- **Agent identity**: EIP-191 signed HTTP headers verified with `viem.verifyMessage`
