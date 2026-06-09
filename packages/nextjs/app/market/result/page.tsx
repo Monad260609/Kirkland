@@ -15,6 +15,7 @@ import {
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
+import { PaymentFlowVisualizer, buildFlowSteps } from "~~/components/PaymentFlowVisualizer";
 import { useGatewayQuery } from "~~/hooks/gateway/useGatewayQuery";
 import type { GatewayResult } from "~~/hooks/gateway/useGatewayQuery";
 import { addCallEntry } from "~~/utils/gateway/callHistory";
@@ -38,7 +39,7 @@ export default function MarketResultPage() {
   const fullQuery = buildQuery(category, query);
 
   const { isConnected } = useAccount();
-  const { queryGateway, result, error, isPending } = useGatewayQuery();
+  const { queryGateway, result, error, isPending, flow } = useGatewayQuery();
 
   const [preCheck, setPreCheck] = useState<CachePreCheck | null>(null);
   const [preCheckLoading, setPreCheckLoading] = useState(true);
@@ -141,6 +142,7 @@ export default function MarketResultPage() {
           {category === "crypto" && `${query.toUpperCase()} / USD`}
           {category === "weather" && query}
           {category === "countries" && query}
+          {category === "swap" && query}
         </motion.h1>
         <p className="text-white/50 text-base mb-8">via x402 Gateway on Monad</p>
 
@@ -202,9 +204,21 @@ export default function MarketResultPage() {
 
         {/* ── STATE 4: Payment in progress ── */}
         {isConnected && isPending && (
-          <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <IconLoader2 className="h-8 w-8 text-white/60 animate-spin" />
-            <p className="text-white/70 text-lg">Sign the transaction in your wallet...</p>
+          <div className="flex flex-col items-center gap-6 py-8">
+            <PaymentFlowVisualizer
+              steps={buildFlowSteps({
+                agentId: flow.agentId,
+                agentVerified: flow.agentVerified,
+                paymentTxHash: flow.paymentTxHash,
+                paymentAmount: flow.paymentAmount,
+                cached: flow.cached,
+                txHash: flow.txHash,
+                explorerUrl: flow.explorerUrl,
+                data: result?.data,
+                isPending: true,
+                currentStep: flow.currentStep ?? "identity",
+              })}
+            />
           </div>
         )}
 

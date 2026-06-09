@@ -27,6 +27,24 @@ interface AgentHeaders {
   "X-Agent-Ts": string;
 }
 
+export type FlowStepKey = "identity" | "payment" | "confirmation" | "cache" | "result";
+
+export interface FlowState {
+  currentStep: FlowStepKey | null;
+  agentId?: string;
+  agentVerified: boolean;
+  paymentTxHash?: string;
+  paymentAmount?: string;
+  cached?: boolean;
+  txHash?: string;
+  explorerUrl?: string;
+}
+
+const INITIAL_FLOW: FlowState = {
+  currentStep: null,
+  agentVerified: false,
+};
+
 export function useGatewayQuery() {
   const { address } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
@@ -34,6 +52,7 @@ export function useGatewayQuery() {
   const [result, setResult] = useState<GatewayResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [flow, setFlow] = useState<FlowState>(INITIAL_FLOW);
 
   /**
    * @param query  - Natural language query ("eth price", "Denver weather", etc.)
@@ -47,17 +66,37 @@ export function useGatewayQuery() {
       setError(null);
       setResult(null);
       setIsPending(true);
+      setFlow({ ...INITIAL_FLOW, currentStep: "identity" });
 
       try {
         if (!address) throw new Error("Connect your wallet first");
 
+        // ── Step 1: sign agent identity (before payment so the visualizer reads naturally) ──
+        const agentTs = Date.now().toString();
+        const agentMessage = `cachemarket-agent:${address}:${agentTs}`;
+        let agentHeaders: AgentHeaders | null = null;
+        try {
+          const agentSig = await signMessageAsync({ message: agentMessage });
+          agentHeaders = {
+            "X-Agent-Id": address,
+            "X-Agent-Sig": agentSig,
+            "X-Agent-Ts": agentTs,
+          };
+          setFlow(f => ({ ...f, agentId: address, agentVerified: true }));
+        } catch {
+          // User rejected signature — proceed as anonymous
+          setFlow(f => ({ ...f, agentVerified: false }));
+        }
+
+        // ── Step 2: resolve cache status + price ──
+        setFlow(f => ({ ...f, currentStep: "payment" }));
         let price: string;
+        let cached: boolean;
 
         if (cachedHint !== undefined) {
-          // We already know from the pre-check — skip the extra API call
+          cached = cachedHint;
           price = cachedHint ? "0.0001" : "0.001";
         } else {
-          // Fallback: ask the backend for the cache status
           const res = await fetch("/api/query", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -68,22 +107,32 @@ export function useGatewayQuery() {
             const body = await res.json();
             if (res.ok) {
               setResult(body);
+              setFlow(f => ({
+                ...f,
+                currentStep: "result",
+                cached: body.cached,
+                txHash: body.txHash,
+                explorerUrl: body.explorerUrl,
+              }));
               return body as GatewayResult;
             }
             throw new Error(body.error || "Query failed");
           }
 
           const paymentInfo = await res.json();
-          price = paymentInfo.cached ? "0.0001" : "0.001";
+          cached = paymentInfo.cached ?? false;
+          price = cached ? "0.0001" : "0.001";
         }
+        setFlow(f => ({ ...f, cached, paymentAmount: `${price} MON` }));
 
-        // Send MON payment
+        // ── Step 3: send MON payment ──
         const paymentTxHash = await sendTransactionAsync({
           to: SERVER_WALLET,
           value: parseEther(price),
         });
+        setFlow(f => ({ ...f, paymentTxHash, currentStep: "confirmation" }));
 
-        // Wait for confirmation on Monad (poll every 2.5s to avoid 429)
+        // ── Step 4: wait for confirmation on Monad ──
         let confirmed = false;
         for (let i = 0; i < 20; i++) {
           await new Promise(r => setTimeout(r, 2500));
@@ -106,23 +155,8 @@ export function useGatewayQuery() {
         // Small delay before retry to let the RPC breathe
         await new Promise(r => setTimeout(r, 1000));
 
-        // Sign agent identity (cachemarket-agent:<address>:<timestamp>)
-        // The server verifies this signature and stamps the response with agentVerified=true.
-        const agentTs = Date.now().toString();
-        const agentMessage = `cachemarket-agent:${address}:${agentTs}`;
-        let agentHeaders: AgentHeaders | null = null;
-        try {
-          const agentSig = await signMessageAsync({ message: agentMessage });
-          agentHeaders = {
-            "X-Agent-Id": address,
-            "X-Agent-Sig": agentSig,
-            "X-Agent-Ts": agentTs,
-          };
-        } catch {
-          // User rejected signature — proceed as anonymous (payment still valid)
-        }
-
-        // Retry with payment proof (with backoff on 500 errors)
+        // ── Step 5: retry with payment proof + agent headers ──
+        setFlow(f => ({ ...f, currentStep: "cache" }));
         let retryRes: Response | null = null;
         for (let attempt = 0; attempt < 4; attempt++) {
           retryRes = await fetch("/api/query", {
@@ -135,7 +169,6 @@ export function useGatewayQuery() {
             body: JSON.stringify({ query }),
           });
 
-          // If we got a 500, retry with backoff (transient RPC error)
           if (retryRes.status >= 500 && attempt < 3) {
             await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt)));
             continue;
@@ -148,9 +181,17 @@ export function useGatewayQuery() {
           throw new Error(body.error || "Query failed after payment");
         }
 
-        const data = await retryRes.json();
+        const data = (await retryRes.json()) as GatewayResult;
         setResult(data);
-        return data as GatewayResult;
+        setFlow(f => ({
+          ...f,
+          currentStep: "result",
+          cached: data.cached,
+          txHash: data.txHash,
+          explorerUrl: data.explorerUrl,
+          agentVerified: data.agentVerified ?? f.agentVerified,
+        }));
+        return data;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         setError(message);
@@ -162,5 +203,11 @@ export function useGatewayQuery() {
     [address, sendTransactionAsync, signMessageAsync],
   );
 
-  return { queryGateway, result, error, isPending };
+  const resetFlow = useCallback(() => {
+    setFlow(INITIAL_FLOW);
+    setResult(null);
+    setError(null);
+  }, []);
+
+  return { queryGateway, result, error, isPending, flow, resetFlow };
 }
