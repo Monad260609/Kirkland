@@ -33,7 +33,7 @@
     "foundry:test": "npm run test -w @se-2/foundry",
     "foundry:verify": "npm run verify -w @se-2/foundry",
     "generate": "npm run foundry:generate",
-    "postinstall": "husky install",
+    "postinstall": "husky install || true",
     "ipfs": "npm run ipfs -w @se-2/nextjs",
     "lint": "npm run next:lint && npm run foundry:lint",
     "next:build": "npm run build -w @se-2/nextjs",
