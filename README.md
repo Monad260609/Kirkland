@@ -64,7 +64,7 @@ Uniswap quotes are read directly from the QuoterV2 contract across the three sta
 3. Edit `.env.local` with:
    - `BACKEND_PRIVATE_KEY` — Private key of the DataCache owner (used to write to chain)
    - `SERVER_WALLET` / `NEXT_PUBLIC_SERVER_WALLET` — Public address matching the key above
-   - `DATACACHE_ADDRESS` — Deployed DataCache contract address (defaults to the Denver deployment)
+   - `DATACACHE_ADDRESS` — Deployed DataCache contract address (defaults to the Blitz NYC deployment)
    - `GROQ_API_KEY` — Groq API key for the AI category (free at console.groq.com; without it AI queries return an explicit 502)
    - `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` — WalletConnect project ID (optional)
    - `ETHEREUM_RPC_URL` — Ethereum mainnet RPC for Uniswap quotes (optional, defaults to a public endpoint)

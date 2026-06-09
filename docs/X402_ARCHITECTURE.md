@@ -60,7 +60,7 @@ Client helpers: `sdk/src/agentIdentity.ts` (`createAgentHeaders`, `getAgentAddre
 
 ## Smart Contract — DataCache
 
-- **Address**: `0x8aff0f33092efe2af41c67e8e76944d0009a5fca`
+- **Address**: `0xF82441bDCAD5a0BB910798cC3859366cAF2AE413`
 - **Chain**: Monad Testnet (ID: 10143)
 - **TTL**: 60 seconds (configurable by owner)
 

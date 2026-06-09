@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   10143: {
     DataCache: {
-      address: "0x8aff0f33092efe2af41c67e8e76944d0009a5fca",
+      address: "0xF82441bDCAD5a0BB910798cC3859366cAF2AE413",
       abi: [
         {
           type: "constructor",
