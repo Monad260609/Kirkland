@@ -118,9 +118,12 @@ export function buildFlowSteps(opts: {
     currentStep,
   } = opts;
 
+  // Mirrors the real sequence in useGatewayQuery — identity is signed first,
+  // the payment is confirmed before the gateway resolves the cache. Keeping
+  // this array in sync with the visual order prevents back-and-forth jumps.
   const getStatus = (step: string): FlowStep["status"] => {
     if (!currentStep) return "pending";
-    const order = ["identity", "payment", "cache", "confirmation", "result"];
+    const order = ["identity", "payment", "confirmation", "cache", "result"];
     const currentIdx = order.indexOf(currentStep);
     const stepIdx = order.indexOf(step);
     if (stepIdx < currentIdx) return "complete";
@@ -146,6 +149,12 @@ export function buildFlowSteps(opts: {
       link: paymentTxHash ? `https://testnet.monadexplorer.com/tx/${paymentTxHash}` : undefined,
     },
     {
+      label: "Payment Confirmed",
+      value: getStatus("confirmation") === "complete" ? "Confirmed on Monad" : "Waiting for on-chain confirmation...",
+      status: getStatus("confirmation"),
+      link: paymentTxHash ? `https://testnet.monadexplorer.com/tx/${paymentTxHash}` : undefined,
+    },
+    {
       label: "Cache Status",
       value:
         cached === undefined
@@ -156,15 +165,12 @@ export function buildFlowSteps(opts: {
       status: getStatus("cache"),
     },
     {
-      label: "On-Chain Confirmation",
-      value: txHash ? `Block confirmed — ${txHash.slice(0, 10)}...${txHash.slice(-6)}` : "Waiting for confirmation...",
-      status: getStatus("confirmation"),
-      link: explorerUrl,
-    },
-    {
       label: "Data Returned",
-      value: data ? `${Object.keys(data).length} fields received` : "Waiting for data...",
+      value: data
+        ? `${Object.keys(data).length} fields received${txHash ? ` — stored at ${txHash.slice(0, 10)}…` : ""}`
+        : "Waiting for data...",
       status: getStatus("result"),
+      link: explorerUrl,
     },
   ];
 }

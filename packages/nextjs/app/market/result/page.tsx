@@ -44,6 +44,7 @@ function MarketResultPageInner() {
   const searchParams = useSearchParams();
   const category = searchParams.get("cat") ?? "";
   const query = searchParams.get("q") ?? "";
+  const focus = searchParams.get("focus") ?? "all";
   const fullQuery = buildQuery(category, query);
 
   const { isConnected } = useAccount();
@@ -284,7 +285,7 @@ function MarketResultPageInner() {
             <PaymentInfoBanner result={result} />
             {category === "crypto" && <CryptoResult data={result.data} token={query} />}
             {category === "weather" && <WeatherResult data={result.data} />}
-            {category === "countries" && <CountriesResult data={result.data} />}
+            {category === "countries" && <CountriesResult data={result.data} focus={focus} />}
             {category === "swap" && <SwapQuoteResult data={result.data} />}
             {category === "ai" && <AIResult data={result.data} question={query} />}
           </motion.div>
@@ -394,26 +395,39 @@ function WeatherResult({ data }: { data: Record<string, unknown> }) {
 }
 
 /* ── Countries ── */
-function CountriesResult({ data }: { data: Record<string, unknown> }) {
-  const items = [
-    { label: "Country", value: String(data.name ?? "—") },
-    { label: "Capital", value: String(data.capital ?? "—") },
-    { label: "Population", value: typeof data.population === "number" ? data.population.toLocaleString() : "—" },
-    { label: "Currency", value: String(data.currency ?? "—") },
-    { label: "Region", value: String(data.region ?? "—") },
-  ];
+function CountriesResult({ data, focus }: { data: Record<string, unknown>; focus: string }) {
+  // The payload always comes whole from REST Countries; `focus` only decides
+  // which field gets the hero treatment.
+  const fields: Record<string, { label: string; value: string }> = {
+    capital: { label: "Capital", value: String(data.capital ?? "—") },
+    population: {
+      label: "Population",
+      value: typeof data.population === "number" ? data.population.toLocaleString() : "—",
+    },
+    currency: { label: "Currency", value: String(data.currency ?? "—") },
+    region: { label: "Region", value: String(data.region ?? "—") },
+  };
+
+  const focused = focus !== "all" && fields[focus] ? fields[focus] : null;
+  const secondary = Object.entries(fields).filter(([key]) => key !== focus);
 
   return (
     <div className="space-y-4">
-      {typeof data.flag === "string" && (
-        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 flex items-center gap-4">
-          <span className="text-4xl">{String(data.flag)}</span>
-          <h2 className="text-white text-3xl font-bold">{String(data.name ?? "—")}</h2>
+      <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 flex items-center gap-4">
+        {typeof data.flag === "string" && <span className="text-4xl">{String(data.flag)}</span>}
+        <h2 className="text-white text-3xl font-bold">{String(data.name ?? "—")}</h2>
+      </div>
+
+      {focused && (
+        <div className="rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md p-8 text-center">
+          <p className="text-white/60 text-sm uppercase tracking-wider mb-2">{focused.label}</p>
+          <p className="text-white text-5xl font-bold">{focused.value}</p>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {items.map(item => (
-          <div key={item.label} className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${focused ? "" : "lg:grid-cols-4"} gap-4`}>
+        {(focused ? secondary : Object.entries(fields)).map(([key, item]) => (
+          <div key={key} className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
             <p className="text-white/50 text-sm mb-1">{item.label}</p>
             <p className="text-white text-xl font-bold">{item.value}</p>
           </div>

@@ -233,7 +233,7 @@ function LifecycleDiagram() {
           Seed
         </text>
         <text x="120" y="108" textAnchor="middle" fill="white" fillOpacity="0.6" fontSize="10">
-          $0.01
+          0.001 MON
         </text>
         <text x="120" y="175" textAnchor="middle" fill="white" fillOpacity="0.8" fontSize="10" fontFamily="monospace">
           fetch + store
@@ -298,7 +298,7 @@ function LifecycleDiagram() {
           Re-seed
         </text>
         <text x="560" y="108" textAnchor="middle" fill="white" fillOpacity="0.6" fontSize="10">
-          $0.01
+          0.001 MON
         </text>
         <text x="560" y="175" textAnchor="middle" fill="white" fillOpacity="0.8" fontSize="10" fontFamily="monospace">
           new cycle begins
@@ -477,7 +477,7 @@ export function HowItWorksContent() {
           <div>
             <div className="text-3xl font-bold text-white mb-1">3.</div>
             <div className="text-white/80 text-sm">
-              If not, you seed the cache for <span className="text-purple-300 font-mono">$0.01</span>
+              If not, you seed the cache for <span className="text-purple-300 font-mono">0.001 MON</span>
             </div>
           </div>
         </div>

@@ -64,10 +64,11 @@ export function detectIntent(input: string): Intent {
   }
 
   // Country detection — multi-word countries supported:
-  // "United States info", "info on South Korea", "Brazil population"
+  // "United States info", "info on South Korea", "Brazil population", "France currency"
   const countryMatch =
-    lower.match(/(?:country|info|population|capital|currency)\s+(?:of\s+|on\s+|about\s+)?([a-z][a-z\s'-]*?)\s*$/) ||
-    lower.match(/^([a-z][a-z\s'-]*?)\s+(?:country|info|population|capital)\b/);
+    lower.match(
+      /(?:country|info|population|capital|currency|region)\s+(?:of\s+|on\s+|about\s+)?([a-z][a-z\s'-]*?)\s*$/,
+    ) || lower.match(/^([a-z][a-z\s'-]*?)\s+(?:country|info|population|capital|currency|region)\b/);
   if (countryMatch) {
     return { type: "country", param: countryMatch[1].trim() };
   }
