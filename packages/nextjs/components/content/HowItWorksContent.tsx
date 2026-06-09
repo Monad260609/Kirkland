@@ -255,7 +255,7 @@ function LifecycleDiagram() {
           CACHE ACTIVE — 60s TTL
         </text>
         <text x="280" y="210" textAnchor="middle" fill="white" fillOpacity="0.8" fontSize="10" fontFamily="monospace">
-          reads @ $0.0001 each
+          reads @ 0.0001 MON each
         </text>
 
         <circle
@@ -471,7 +471,7 @@ export function HowItWorksContent() {
           <div>
             <div className="text-3xl font-bold text-white mb-1">2.</div>
             <div className="text-white/80 text-sm">
-              If cached on-chain, you read it for <span className="text-green-300 font-mono">$0.0001</span>
+              If cached on-chain, you read it for <span className="text-green-300 font-mono">0.0001 MON</span>
             </div>
           </div>
           <div>
