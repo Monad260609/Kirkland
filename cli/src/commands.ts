@@ -39,10 +39,12 @@ function detectIntent(input: string): { type: IntentType; param: string } {
   const lower = input.toLowerCase().trim();
 
   if (/weather|temperature|forecast/.test(lower)) {
+    // \b guards keep city names intact ("Beijing", "Singapore" both contain "in")
     const city = lower
-      .replace(/weather|temperature|forecast|in/g, "")
+      .replace(/\b(weather|temperature|forecast|in|for)\b/g, "")
+      .replace(/\s+/g, " ")
       .trim();
-    return { type: "weather", param: city || "denver" };
+    return { type: "weather", param: city || "new york" };
   }
 
   if (/price|eth|btc|sol|bitcoin|ethereum|solana|mon|monad/.test(lower)) {

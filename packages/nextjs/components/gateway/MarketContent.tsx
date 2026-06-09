@@ -28,7 +28,7 @@ const CATEGORIES: CategoryData[] = [
     title: "Weather (wttr.in)",
     description: "Weather data for any city worldwide",
     icon: <IconCloud className="h-6 w-6" />,
-    options: ["Denver weather", "weather in Paris", "Tokyo weather", "London forecast", "New York weather"],
+    options: ["New York weather", "weather in Paris", "Tokyo weather", "London forecast", "Miami weather"],
     catKey: "weather",
   },
   {

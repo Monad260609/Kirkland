@@ -82,7 +82,7 @@ export class CacheMarket {
    *
    * @example
    * const result = await client.query("price of ETH");
-   * const result = await client.query("weather in Denver");
+   * const result = await client.query("weather in New York");
    * const result = await client.query("France info");
    */
   async query(query: string): Promise<QueryResult> {

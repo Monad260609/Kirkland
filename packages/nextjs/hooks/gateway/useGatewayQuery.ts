@@ -55,7 +55,7 @@ export function useGatewayQuery() {
   const [flow, setFlow] = useState<FlowState>(INITIAL_FLOW);
 
   /**
-   * @param query  - Natural language query ("eth price", "Denver weather", etc.)
+   * @param query  - Natural language query ("eth price", "New York weather", etc.)
    * @param cachedHint - Pass true/false from the pre-check to skip the redundant 402 call.
    *                     true  → cache hit  → pay 0.0001 MON
    *                     false → cache miss → pay 0.001 MON

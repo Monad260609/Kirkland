@@ -41,8 +41,9 @@ export function detectIntent(input: string): Intent {
   }
 
   // Price detection: "ETH price", "price of bitcoin", "bitcoin", "BTC"
+  // \b guards prevent substring hits ("canada" ≠ ada, "monaco" ≠ mon)
   const priceMatch = lower.match(
-    /(?:price)\s+(?:of\s+)?(\w+)|(\w+)\s+price|(ethereum|bitcoin|btc|eth|sol|solana|matic|avax|dot|ada|mon|monad)/,
+    /(?:price)\s+(?:of\s+)?(\w+)|(\w+)\s+price|\b(ethereum|bitcoin|btc|eth|sol|solana|matic|avax|dot|ada|mon|monad)\b/,
   );
   if (priceMatch) {
     const raw = priceMatch[1] || priceMatch[2] || priceMatch[3];
@@ -50,20 +51,25 @@ export function detectIntent(input: string): Intent {
     return { type: "price", param: token };
   }
 
-  // Weather detection: "Denver weather", "weather in Paris", "Tokyo forecast"
-  const weatherMatch = lower.match(
-    /(?:weather|temperature|forecast)\s+(?:in\s+|for\s+)?(\w+)|(\w+)\s+(?:weather|forecast)/,
-  );
+  // Weather detection — multi-word cities supported:
+  // "weather in New York", "New York weather", "temperature for Buenos Aires", "Tokyo forecast"
+  const weatherMatch =
+    lower.match(/(?:weather|temperature|forecast)\s+(?:in\s+|for\s+)?([a-z][a-z\s'-]*?)\s*$/) ||
+    lower.match(/^([a-z][a-z\s'-]*?)\s+(?:weather|temperature|forecast)\b/);
   if (weatherMatch) {
-    return { type: "weather", param: weatherMatch[1] || weatherMatch[2] };
+    return { type: "weather", param: weatherMatch[1].trim() || "new york" };
+  }
+  if (/^(?:weather|temperature|forecast)$/.test(lower)) {
+    return { type: "weather", param: "new york" };
   }
 
-  // Country detection: "France info", "Japan country", "Brazil population", "info on Germany"
-  const countryMatch = lower.match(
-    /(?:country|info|population|capital|currency)\s+(?:of\s+|on\s+|about\s+)?(\w+)|(\w+)\s+(?:country|info|population)/,
-  );
+  // Country detection — multi-word countries supported:
+  // "United States info", "info on South Korea", "Brazil population"
+  const countryMatch =
+    lower.match(/(?:country|info|population|capital|currency)\s+(?:of\s+|on\s+|about\s+)?([a-z][a-z\s'-]*?)\s*$/) ||
+    lower.match(/^([a-z][a-z\s'-]*?)\s+(?:country|info|population|capital)\b/);
   if (countryMatch) {
-    return { type: "country", param: countryMatch[1] || countryMatch[2] };
+    return { type: "country", param: countryMatch[1].trim() };
   }
 
   // Default: treat as crypto price
