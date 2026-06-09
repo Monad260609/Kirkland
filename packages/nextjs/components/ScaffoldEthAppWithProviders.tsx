@@ -33,7 +33,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <div className="flex flex-col min-h-screen">
-        {/* ── Top-left: back arrow + CacheMarket logo (skip on landing and /connect) ── */}
+        {/* ── Top-left: back arrow + Cachemarket logo (skip on landing and /connect) ── */}
         {!isConnect && !isLanding && (
           <div className="fixed top-0 left-0 z-20 p-4 flex items-center gap-3">
             <button
@@ -47,7 +47,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
               href={logoHref}
               className="font-[family-name:var(--font-vt323)] text-2xl text-white tracking-wider hover:text-white/80 transition-colors"
             >
-              CacheMarket
+              Cachemarket
             </Link>
           </div>
         )}

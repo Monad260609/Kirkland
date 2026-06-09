@@ -342,7 +342,7 @@ function PricingSection() {
             <span className="text-purple-300 font-bold">Seeder</span>
           </div>
           <div className="px-6 py-5">
-            <span className="text-white font-bold text-xl">$0.01</span>
+            <span className="text-white font-bold text-xl">0.001 MON</span>
           </div>
           <div className="px-6 py-5 text-white/70 text-sm">
             First request fetches from source, stores result on-chain. You fund the cache for everyone.
@@ -353,10 +353,10 @@ function PricingSection() {
             <span className="text-green-300 font-bold">Reader</span>
           </div>
           <div className="px-6 py-5">
-            <span className="text-white font-bold text-xl">$0.0001</span>
+            <span className="text-white font-bold text-xl">0.0001 MON</span>
           </div>
           <div className="px-6 py-5 text-white/70 text-sm">
-            Read cached data on-chain. 100x cheaper. Available until TTL expires.
+            Read cached data on-chain. 10x cheaper. Available until TTL expires.
           </div>
         </div>
         <div className="grid grid-cols-3">

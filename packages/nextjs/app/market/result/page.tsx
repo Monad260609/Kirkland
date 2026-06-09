@@ -98,6 +98,8 @@ function MarketResultPageInner() {
         txHash: res.txHash,
         explorerUrl: res.explorerUrl,
         source: res.source,
+        agentId: res.agentId,
+        agentVerified: res.agentVerified,
         timestamp: res.timestamp,
       });
     }

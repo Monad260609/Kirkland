@@ -13,7 +13,7 @@ For **Monad Blitz NYC (June 2026)** the project picks up where Denver left off a
 
 ## How it works
 
-1. You ask a natural language question ("price of ETH", "weather in Denver", "quote 1 ETH to USDC")
+1. You ask a natural language question ("price of ETH", "weather in New York", "quote 1 ETH to USDC")
 2. The gateway checks the `DataCache` smart contract on Monad for a cached answer
 3. **Cache hit** — you pay 0.0001 MON and get the data instantly
 4. **Cache miss** — you pay 0.001 MON, the gateway fetches fresh data from an external API, stores it on-chain, and returns it to you
@@ -40,7 +40,7 @@ User / Agent                                            (optional)
 | Category | Source | Example queries |
 |----------|--------|-----------------|
 | Crypto prices | CoinGecko | "ETH price", "price of bitcoin", "SOL" |
-| Weather | wttr.in | "Denver weather", "weather in Paris" |
+| Weather | wttr.in | "New York weather", "weather in Paris" |
 | Country info | REST Countries | "France info", "Japan country" |
 | Swap quotes | Uniswap (Ethereum mainnet) | "quote 1 ETH to USDC", "1 WBTC in DAI" |
 | AI fallback | Groq (Llama 3.3 70B) | Any other question (optional) |
@@ -101,7 +101,7 @@ const client = new CacheMarket({
 const { isCached, data } = await client.checkCache("ETH price");
 
 // Full query (cache check → fetch if miss → store on-chain)
-const result = await client.query("weather in Denver");
+const result = await client.query("weather in New York");
 
 // Sign a request as a verifiable agent (HTTP gateway flow)
 const headers = await createAgentHeaders("0x..."); // { X-Agent-Id, X-Agent-Sig, X-Agent-Ts }

@@ -170,7 +170,7 @@ Check if a MON payment transaction is confirmed on Monad.
 | Query | City |
 |---|---|
 | `"weather Denver"` | Denver |
-| `"Denver weather"` | Denver |
+| `"New York weather"` | New York |
 | `"meteo Paris"` | Paris |
 | `"temperature Tokyo"` | Tokyo |
 | `"forecast London"` | London |

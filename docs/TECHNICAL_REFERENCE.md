@@ -6,7 +6,7 @@ This file consolidates the original detailed documentation that was previously i
 
 **x402 Universal Access Point — Data Freshness Marketplace**
 
-An on-chain data caching protocol built on Monad Testnet. The first requester seeds the cache and pays the full price; every subsequent requester reads from on-chain storage for 100x less. No API keys, no subscriptions — just a wallet.
+An on-chain data caching protocol built on Monad Testnet. The first requester seeds the cache and pays the full price; every subsequent requester reads from on-chain storage for 10x less. No API keys, no subscriptions — just a wallet.
 
 ---
 
