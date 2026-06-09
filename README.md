@@ -177,12 +177,20 @@ Built on Monad's sub-second finality and sub-cent transaction costs, micropaymen
 
 ## Team
 
-Monad Blitz NYC team (June 9, 2026):
+### Monad Blitz NYC (June 9, 2026)
 
 | Name | Role | Links |
 |------|------|-------|
 | **Sofiane Ben Taleb** | Full-Stack & Smart Contracts | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
-| **Johann** | — | — |
-| **Jean** | — | — |
+| **Johann Cali** | Builder | [GitHub](https://github.com/JohannCFi) |
+| **Jean** | Builder | [GitHub](https://github.com/vassCaR) |
 
-Original protocol built at **Monad Blitz Denver** (February 17, 2026) by Sofiane Ben Taleb, Armand Sechon and Noé Wales — DeVinci Blockchain, Paris.
+### Monad Blitz Denver (February 17, 2026) — original protocol
+
+Built in one day by three students from **DeVinci Blockchain** (Paris, France). Finalist.
+
+| Name | Role | Links |
+|------|------|-------|
+| **Sofiane Ben Taleb** | Full-Stack & Smart Contracts | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
+| **Armand Sechon** | Backend & Infrastructure | [GitHub](https://github.com/STOOKEEE) · [LinkedIn](https://www.linkedin.com/in/armand-sechon/) |
+| **Noé Wales** | Frontend & Design | [GitHub](https://github.com/CHAAIISE) · [LinkedIn](https://www.linkedin.com/in/no%C3%A9-w/) |
