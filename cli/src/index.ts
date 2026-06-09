@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import "dotenv/config";
+import "./env.js";
 import { Command } from "commander";
 import { queryCommand, statsCommand } from "./commands.js";
 
