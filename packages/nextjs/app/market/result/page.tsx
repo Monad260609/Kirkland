@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import {
   IconArrowLeft,
@@ -47,10 +47,16 @@ function MarketResultPageInner() {
   const fullQuery = buildQuery(category, query);
 
   const { isConnected } = useAccount();
-  const { queryGateway, result, error, isPending, flow, pendingPayment } = useGatewayQuery();
+  const { queryGateway, result, error, isPending, flow, pendingPayment, resetFlow } = useGatewayQuery();
 
   const [preCheck, setPreCheck] = useState<CachePreCheck | null>(null);
   const [preCheckLoading, setPreCheckLoading] = useState(true);
+
+  // Follow-up navigation (e.g. AI "ask another") changes the query in place —
+  // clear the previous result so the page re-enters the pay flow.
+  useEffect(() => {
+    resetFlow();
+  }, [fullQuery, resetFlow]);
 
   // Pre-check: call /api/query without X-PAYMENT to get the 402 info (cache status + price)
   useEffect(() => {
@@ -280,7 +286,7 @@ function MarketResultPageInner() {
             {category === "weather" && <WeatherResult data={result.data} />}
             {category === "countries" && <CountriesResult data={result.data} />}
             {category === "swap" && <SwapQuoteResult data={result.data} />}
-            {category === "ai" && <AIResult data={result.data} />}
+            {category === "ai" && <AIResult data={result.data} question={query} />}
           </motion.div>
         )}
       </div>
@@ -504,8 +510,11 @@ function buildUniswapDeepLink(tokenIn: string, tokenOut: string, amountIn: strin
   return `https://app.uniswap.org/#/swap?${params.toString()}`;
 }
 
-/* ── AI answer (Groq) ── */
-function AIResult({ data }: { data: Record<string, unknown> }) {
+/* ── AI answer (Groq) — chat-style bubbles + follow-up input ── */
+function AIResult({ data, question }: { data: Record<string, unknown>; question: string }) {
+  const router = useRouter();
+  const [followUp, setFollowUp] = useState("");
+
   if (typeof data.error === "string") {
     return (
       <div className="rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-md p-6 text-red-300">
@@ -515,13 +524,48 @@ function AIResult({ data }: { data: Record<string, unknown> }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-8">
-        <p className="text-white text-2xl leading-relaxed">{String(data.answer ?? "—")}</p>
+    <div className="max-w-2xl mx-auto space-y-4">
+      {/* question bubble */}
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-white/15 border border-white/20 backdrop-blur-md px-5 py-3">
+          <p className="text-white text-base">{question}</p>
+        </div>
       </div>
-      <p className="text-white/40 text-xs text-center">
-        Answered by {String(data.model ?? "Groq")} · cached on Monad for 60s
-      </p>
+
+      {/* answer bubble */}
+      <div className="flex justify-start">
+        <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-white/5 border border-white/10 backdrop-blur-md px-5 py-4">
+          <p className="text-white text-lg leading-relaxed">{String(data.answer ?? "—")}</p>
+          <p className="text-white/40 text-xs mt-3">{String(data.model ?? "Groq")} · cached on Monad for 60s</p>
+        </div>
+      </div>
+
+      {/* follow-up — each question is its own paid x402 query */}
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          const trimmed = followUp.trim();
+          if (!trimmed) return;
+          router.push(`/market/result?cat=ai&q=${encodeURIComponent(trimmed)}`);
+          setFollowUp("");
+        }}
+        className="flex gap-2 pt-2"
+      >
+        <input
+          type="text"
+          value={followUp}
+          onChange={e => setFollowUp(e.target.value)}
+          placeholder="Ask another question…"
+          className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
+        />
+        <button
+          type="submit"
+          disabled={!followUp.trim()}
+          className="px-5 py-3 rounded-xl bg-white/15 border border-white/20 text-white font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Ask →
+        </button>
+      </form>
     </div>
   );
 }

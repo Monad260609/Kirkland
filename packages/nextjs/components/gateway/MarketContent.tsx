@@ -51,20 +51,9 @@ const CATEGORIES: CategoryData[] = [
     ],
     catKey: "swap",
   },
-  {
-    title: "Ask AI (Groq)",
-    description: "Llama 3.3 70B answers, cached on Monad like any data",
-    icon: <IconSparkles className="h-6 w-6" />,
-    options: [
-      "what is the speed of light",
-      "who invented bitcoin",
-      "how tall is the empire state building",
-      "what is x402",
-      "when was new york founded",
-    ],
-    catKey: "ai",
-  },
 ];
+
+const AI_SUGGESTIONS = ["what is the speed of light", "who invented bitcoin", "when was new york founded"];
 
 /* ── dropdown ── */
 
@@ -96,6 +85,57 @@ function MetricDropdown({
   );
 }
 
+/* ── AI chat input (free-form, replaces the dropdown for the AI card) ── */
+
+function AIChatInput() {
+  const router = useRouter();
+  const [question, setQuestion] = useState("");
+
+  const ask = (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    router.push(`/market/result?cat=ai&q=${encodeURIComponent(trimmed)}`);
+  };
+
+  return (
+    <div className="space-y-3">
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          ask(question);
+        }}
+        className="flex gap-2"
+      >
+        <input
+          type="text"
+          value={question}
+          onChange={e => setQuestion(e.target.value)}
+          placeholder="Ask anything…"
+          className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
+        />
+        <button
+          type="submit"
+          disabled={!question.trim()}
+          className="px-4 py-2 rounded-xl bg-white/15 border border-white/20 text-white text-sm font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Ask →
+        </button>
+      </form>
+      <div className="flex flex-wrap gap-1.5">
+        {AI_SUGGESTIONS.map(s => (
+          <button
+            key={s}
+            onClick={() => ask(s)}
+            className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs hover:bg-white/15 hover:text-white transition-all"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── main ── */
 
 export function MarketContent() {
@@ -104,28 +144,36 @@ export function MarketContent() {
     Object.fromEntries(CATEGORIES.map((cat, i) => [i, cat.options[0]])),
   );
 
-  const hoverItems = CATEGORIES.map((cat, i) => ({
-    title: cat.title,
-    description: cat.description,
-    icon: cat.icon,
-    children: (
-      <div className="space-y-3">
-        <MetricDropdown
-          options={cat.options}
-          selected={selections[i]}
-          onSelect={v => setSelections(prev => ({ ...prev, [i]: v }))}
-        />
-        <button
-          onClick={() =>
-            router.push(`/market/result?cat=${encodeURIComponent(cat.catKey)}&q=${encodeURIComponent(selections[i])}`)
-          }
-          className="w-full px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-sm font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all"
-        >
-          Request API →
-        </button>
-      </div>
-    ),
-  }));
+  const hoverItems = [
+    ...CATEGORIES.map((cat, i) => ({
+      title: cat.title,
+      description: cat.description,
+      icon: cat.icon,
+      children: (
+        <div className="space-y-3">
+          <MetricDropdown
+            options={cat.options}
+            selected={selections[i]}
+            onSelect={v => setSelections(prev => ({ ...prev, [i]: v }))}
+          />
+          <button
+            onClick={() =>
+              router.push(`/market/result?cat=${encodeURIComponent(cat.catKey)}&q=${encodeURIComponent(selections[i])}`)
+            }
+            className="w-full px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white text-sm font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all"
+          >
+            Request API →
+          </button>
+        </div>
+      ),
+    })),
+    {
+      title: "Ask AI (Groq)",
+      description: "Llama 3.3 70B answers, cached on Monad like any data",
+      icon: <IconSparkles className="h-6 w-6" />,
+      children: <AIChatInput />,
+    },
+  ];
 
   return (
     <motion.div

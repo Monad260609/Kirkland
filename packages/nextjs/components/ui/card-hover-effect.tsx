@@ -19,11 +19,13 @@ export const HoverEffect = ({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 py-10", className)}>
+    // flex + justify-center keeps an incomplete last row centered, unlike a
+    // plain 3-col grid that leaves it hanging left.
+    <div className={cn("flex flex-wrap justify-center py-10", className)}>
       {items.map((item, idx) => (
         <div
           key={item?.title}
-          className="relative group block p-2 h-full w-full"
+          className="relative group block p-2 w-full md:w-1/2 lg:w-1/3"
           onMouseEnter={() => setHoveredIndex(idx)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
@@ -49,7 +51,7 @@ export const HoverEffect = ({
               {item.icon && <span className="text-white/80">{item.icon}</span>}
               <CardTitle>{item.title}</CardTitle>
             </div>
-            <CardDescription>{item.description}</CardDescription>
+            <CardDescription className="flex-grow">{item.description}</CardDescription>
             {item.children && <div className="mt-4">{item.children}</div>}
           </Card>
         </div>
@@ -66,7 +68,8 @@ export const Card = ({ className, children }: { className?: string; children: Re
         className,
       )}
     >
-      <div className="relative z-50">{children}</div>
+      {/* flex column so controls align to the bottom across equal-height cards */}
+      <div className="relative z-50 flex flex-col h-full">{children}</div>
     </div>
   );
 };

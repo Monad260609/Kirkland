@@ -1,6 +1,7 @@
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import {
   baseAccount,
+  injectedWallet,
   ledgerWallet,
   metaMaskWallet,
   rainbowWallet,
@@ -21,7 +22,15 @@ export const wagmiConnectors = () => {
     return [];
   }
 
-  const wallets = [metaMaskWallet, walletConnectWallet, ledgerWallet, baseAccount, rainbowWallet];
+  // WalletConnect-based wallets open a relay + analytics connection on init;
+  // ad blockers (Brave Shields) kill those fetches and spam the console with
+  // "TypeError: Failed to fetch". Only include them when a real project ID is
+  // configured — injectedWallet (EIP-6963) covers every browser-extension
+  // wallet (MetaMask, Rabby, …) without touching WalletConnect.
+  const hasWalletConnectId = Boolean(process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID);
+  const wallets = hasWalletConnectId
+    ? [metaMaskWallet, walletConnectWallet, ledgerWallet, baseAccount, rainbowWallet]
+    : [injectedWallet];
 
   if (!targetNetworks.some(network => network.id !== (chains.hardhat as chains.Chain).id) || !onlyLocalBurnerWallet) {
     // Dynamic require to avoid loading burner-connector on the server (it accesses localStorage)
