@@ -120,8 +120,8 @@ const Home: NextPage = () => {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="text-white/70 text-sm md:text-base max-w-xl mb-8"
           >
-            An on-chain data caching protocol on Monad. The first requester seeds the cache, everyone else reads for
-            100x less. No API keys. No subscriptions. Just a wallet.
+            An on-chain data caching protocol on Monad. The first requester seeds the cache, everyone else reads for 10x
+            less. No API keys. No subscriptions. Just a wallet.
           </motion.p>
 
           {/* ─── 3 CTA Buttons ─── */}

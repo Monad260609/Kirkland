@@ -1,18 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
-import { IconArrowLeft, IconCheck, IconCoin, IconExternalLink, IconLoader2, IconWallet } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconCheck,
+  IconCoin,
+  IconExternalLink,
+  IconLoader2,
+  IconShieldCheck,
+  IconWallet,
+} from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
+import { PaymentFlowVisualizer, buildFlowSteps } from "~~/components/PaymentFlowVisualizer";
 import { useGatewayQuery } from "~~/hooks/gateway/useGatewayQuery";
 import type { GatewayResult } from "~~/hooks/gateway/useGatewayQuery";
 import { addCallEntry } from "~~/utils/gateway/callHistory";
 
 function buildQuery(cat: string, q: string): string {
   if (cat === "crypto") return `${q} price`;
+  // swap/weather/countries options already contain the full query verbatim
   return q;
 }
 
@@ -23,16 +33,31 @@ interface CachePreCheck {
 }
 
 export default function MarketResultPage() {
+  return (
+    <Suspense fallback={null}>
+      <MarketResultPageInner />
+    </Suspense>
+  );
+}
+
+function MarketResultPageInner() {
   const searchParams = useSearchParams();
   const category = searchParams.get("cat") ?? "";
   const query = searchParams.get("q") ?? "";
+  const focus = searchParams.get("focus") ?? "all";
   const fullQuery = buildQuery(category, query);
 
   const { isConnected } = useAccount();
-  const { queryGateway, result, error, isPending } = useGatewayQuery();
+  const { queryGateway, result, error, isPending, flow, pendingPayment, resetFlow } = useGatewayQuery();
 
   const [preCheck, setPreCheck] = useState<CachePreCheck | null>(null);
   const [preCheckLoading, setPreCheckLoading] = useState(true);
+
+  // Follow-up navigation (e.g. AI "ask another") changes the query in place —
+  // clear the previous result so the page re-enters the pay flow.
+  useEffect(() => {
+    resetFlow();
+  }, [fullQuery, resetFlow]);
 
   // Pre-check: call /api/query without X-PAYMENT to get the 402 info (cache status + price)
   useEffect(() => {
@@ -80,6 +105,8 @@ export default function MarketResultPage() {
         txHash: res.txHash,
         explorerUrl: res.explorerUrl,
         source: res.source,
+        agentId: res.agentId,
+        agentVerified: res.agentVerified,
         timestamp: res.timestamp,
       });
     }
@@ -132,6 +159,8 @@ export default function MarketResultPage() {
           {category === "crypto" && `${query.toUpperCase()} / USD`}
           {category === "weather" && query}
           {category === "countries" && query}
+          {category === "swap" && query}
+          {category === "ai" && query}
         </motion.h1>
         <p className="text-white/50 text-base mb-8">via x402 Gateway on Monad</p>
 
@@ -155,7 +184,7 @@ export default function MarketResultPage() {
         )}
 
         {/* ── STATE 3: Ready to pay (pre-check done, no result yet) ── */}
-        {isConnected && !preCheckLoading && preCheck && !result && !isPending && (
+        {isConnected && !preCheckLoading && preCheck && !result && !isPending && !pendingPayment && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -193,14 +222,53 @@ export default function MarketResultPage() {
 
         {/* ── STATE 4: Payment in progress ── */}
         {isConnected && isPending && (
-          <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <IconLoader2 className="h-8 w-8 text-white/60 animate-spin" />
-            <p className="text-white/70 text-lg">Sign the transaction in your wallet...</p>
+          <div className="flex flex-col items-center gap-6 py-8">
+            <PaymentFlowVisualizer
+              steps={buildFlowSteps({
+                agentId: flow.agentId,
+                agentVerified: flow.agentVerified,
+                paymentTxHash: flow.paymentTxHash,
+                paymentAmount: flow.paymentAmount,
+                cached: flow.cached,
+                txHash: flow.txHash,
+                explorerUrl: flow.explorerUrl,
+                data: result?.data,
+                isPending: true,
+                currentStep: flow.currentStep ?? "identity",
+              })}
+            />
           </div>
         )}
 
-        {/* ── STATE 5: Error (after payment attempt) ── */}
-        {error && !isPending && !result && !preCheck && (
+        {/* ── STATE 5: Error after a confirmed payment — payment is kept ── */}
+        {error && !isPending && !result && pendingPayment && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-lg mx-auto w-full"
+          >
+            <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-8 text-center space-y-5">
+              <span className="inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <IconCoin className="h-4 w-4" />
+                Payment confirmed — kept for retry
+              </span>
+              <p className="text-red-300 text-base">{error}</p>
+              <p className="text-white/50 text-sm">
+                Your {flow.paymentAmount ?? "MON"} payment ({pendingPayment.txHash.slice(0, 10)}…) was confirmed
+                on-chain but the data fetch failed. Retry below — you will not be charged again.
+              </p>
+              <button
+                onClick={handlePay}
+                className="w-full px-6 py-4 rounded-xl bg-white/15 border border-white/25 text-white text-lg font-semibold hover:bg-white/25 hover:border-white/40 active:scale-[0.98] transition-all"
+              >
+                Retry — no new payment
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── STATE 5bis: Error before any payment ── */}
+        {error && !isPending && !result && !preCheck && !pendingPayment && (
           <div className="rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-md p-6 text-red-300 text-lg">
             Error: {error}
           </div>
@@ -217,7 +285,9 @@ export default function MarketResultPage() {
             <PaymentInfoBanner result={result} />
             {category === "crypto" && <CryptoResult data={result.data} token={query} />}
             {category === "weather" && <WeatherResult data={result.data} />}
-            {category === "countries" && <CountriesResult data={result.data} />}
+            {category === "countries" && <CountriesResult data={result.data} focus={focus} />}
+            {category === "swap" && <SwapQuoteResult data={result.data} />}
+            {category === "ai" && <AIResult data={result.data} question={query} />}
           </motion.div>
         )}
       </div>
@@ -244,6 +314,15 @@ function PaymentInfoBanner({ result }: { result: GatewayResult }) {
         Cost: <span className="text-white font-semibold">{result.cost}</span>
       </span>
       <span className="text-white/50 text-sm">Source: {result.source}</span>
+      {result.agentVerified && result.agentId && (
+        <span
+          className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono"
+          title={`Signed by agent ${result.agentId}`}
+        >
+          <IconShieldCheck className="h-4 w-4" />
+          AGENT {result.agentId.slice(0, 6)}…{result.agentId.slice(-4)}
+        </span>
+      )}
       {result.explorerUrl && (
         <a
           href={result.explorerUrl}
@@ -316,31 +395,191 @@ function WeatherResult({ data }: { data: Record<string, unknown> }) {
 }
 
 /* ── Countries ── */
-function CountriesResult({ data }: { data: Record<string, unknown> }) {
-  const items = [
-    { label: "Country", value: String(data.name ?? "—") },
-    { label: "Capital", value: String(data.capital ?? "—") },
-    { label: "Population", value: typeof data.population === "number" ? data.population.toLocaleString() : "—" },
-    { label: "Currency", value: String(data.currency ?? "—") },
-    { label: "Region", value: String(data.region ?? "—") },
-  ];
+function CountriesResult({ data, focus }: { data: Record<string, unknown>; focus: string }) {
+  // The payload always comes whole from REST Countries; `focus` only decides
+  // which field gets the hero treatment.
+  const fields: Record<string, { label: string; value: string }> = {
+    capital: { label: "Capital", value: String(data.capital ?? "—") },
+    population: {
+      label: "Population",
+      value: typeof data.population === "number" ? data.population.toLocaleString() : "—",
+    },
+    currency: { label: "Currency", value: String(data.currency ?? "—") },
+    region: { label: "Region", value: String(data.region ?? "—") },
+  };
+
+  const focused = focus !== "all" && fields[focus] ? fields[focus] : null;
+  const secondary = Object.entries(fields).filter(([key]) => key !== focus);
 
   return (
     <div className="space-y-4">
-      {typeof data.flag === "string" && (
-        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 flex items-center gap-4">
-          <span className="text-4xl">{String(data.flag)}</span>
-          <h2 className="text-white text-3xl font-bold">{String(data.name ?? "—")}</h2>
+      <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 flex items-center gap-4">
+        {typeof data.flag === "string" && <span className="text-4xl">{String(data.flag)}</span>}
+        <h2 className="text-white text-3xl font-bold">{String(data.name ?? "—")}</h2>
+      </div>
+
+      {focused && (
+        <div className="rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md p-8 text-center">
+          <p className="text-white/60 text-sm uppercase tracking-wider mb-2">{focused.label}</p>
+          <p className="text-white text-5xl font-bold">{focused.value}</p>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {items.map(item => (
-          <div key={item.label} className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${focused ? "" : "lg:grid-cols-4"} gap-4`}>
+        {(focused ? secondary : Object.entries(fields)).map(([key, item]) => (
+          <div key={key} className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
             <p className="text-white/50 text-sm mb-1">{item.label}</p>
             <p className="text-white text-xl font-bold">{item.value}</p>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ── Uniswap swap quote ── */
+function SwapQuoteResult({ data }: { data: Record<string, unknown> }) {
+  if (typeof data.error === "string") {
+    return (
+      <div className="rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-md p-6 text-red-300">
+        {data.error}
+      </div>
+    );
+  }
+
+  const tokenIn = String(data.tokenIn ?? "?");
+  const tokenOut = String(data.tokenOut ?? "?");
+  const amountIn = String(data.amountIn ?? "—");
+  const amountOut = String(data.amountOut ?? "—");
+  const rate = String(data.rate ?? "—");
+  const route = String(data.route ?? `${tokenIn} → ${tokenOut}`);
+  const gas = typeof data.estimatedGas === "string" ? data.estimatedGas : null;
+
+  return (
+    <div className="space-y-4">
+      {/* headline pair card */}
+      <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 flex flex-wrap items-baseline gap-3">
+        <span className="text-3xl text-white font-bold">{amountIn}</span>
+        <span className="text-3xl text-white/60 font-semibold">{tokenIn}</span>
+        <span className="text-white/40 text-2xl">→</span>
+        <span className="text-3xl text-white font-bold">
+          {Number(amountOut).toLocaleString(undefined, { maximumFractionDigits: 6 })}
+        </span>
+        <span className="text-3xl text-white/60 font-semibold">{tokenOut}</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+          <p className="text-white/50 text-sm mb-1">Rate</p>
+          <p className="text-white text-2xl font-bold">
+            1 {tokenIn} = {rate} {tokenOut}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+          <p className="text-white/50 text-sm mb-1">Route</p>
+          <p className="text-white text-lg font-mono">{route}</p>
+        </div>
+        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+          <p className="text-white/50 text-sm mb-1">Est. swap gas</p>
+          <p className="text-white text-lg font-mono">{gas ? `${Number(gas).toLocaleString()} gas` : "—"}</p>
+        </div>
+      </div>
+
+      <a
+        href={buildUniswapDeepLink(tokenIn, tokenOut, amountIn)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block w-full text-center px-6 py-3 rounded-2xl bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 text-pink-200 hover:text-white font-semibold transition-all"
+      >
+        Execute this swap on Uniswap →
+      </a>
+
+      <p className="text-white/40 text-xs text-center">
+        Quote read on-chain from Uniswap V3 (QuoterV2, Ethereum mainnet) · cached on Monad for 60s
+      </p>
+    </div>
+  );
+}
+
+const UNISWAP_TOKEN_ADDRESSES: Record<string, string> = {
+  ETH: "ETH",
+  WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+  DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+  WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  UNI: "0x1f9840a85d5aF5bf1D1762F925BdAddC4201F984",
+  LINK: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+};
+
+function buildUniswapDeepLink(tokenIn: string, tokenOut: string, amountIn: string): string {
+  const inAddr = UNISWAP_TOKEN_ADDRESSES[tokenIn.toUpperCase()] ?? tokenIn;
+  const outAddr = UNISWAP_TOKEN_ADDRESSES[tokenOut.toUpperCase()] ?? tokenOut;
+  const params = new URLSearchParams({
+    inputCurrency: inAddr,
+    outputCurrency: outAddr,
+    exactAmount: amountIn,
+    exactField: "input",
+  });
+  return `https://app.uniswap.org/#/swap?${params.toString()}`;
+}
+
+/* ── AI answer (Groq) — chat-style bubbles + follow-up input ── */
+function AIResult({ data, question }: { data: Record<string, unknown>; question: string }) {
+  const router = useRouter();
+  const [followUp, setFollowUp] = useState("");
+
+  if (typeof data.error === "string") {
+    return (
+      <div className="rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-md p-6 text-red-300">
+        {data.error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-4">
+      {/* question bubble */}
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-white/15 border border-white/20 backdrop-blur-md px-5 py-3">
+          <p className="text-white text-base">{question}</p>
+        </div>
+      </div>
+
+      {/* answer bubble */}
+      <div className="flex justify-start">
+        <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-white/5 border border-white/10 backdrop-blur-md px-5 py-4">
+          <p className="text-white text-lg leading-relaxed">{String(data.answer ?? "—")}</p>
+          <p className="text-white/40 text-xs mt-3">{String(data.model ?? "Groq")} · cached on Monad for 60s</p>
+        </div>
+      </div>
+
+      {/* follow-up — each question is its own paid x402 query */}
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          const trimmed = followUp.trim();
+          if (!trimmed) return;
+          router.push(`/market/result?cat=ai&q=${encodeURIComponent(trimmed)}`);
+          setFollowUp("");
+        }}
+        className="flex gap-2 pt-2"
+      >
+        <input
+          type="text"
+          value={followUp}
+          onChange={e => setFollowUp(e.target.value)}
+          placeholder="Ask another question…"
+          className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
+        />
+        <button
+          type="submit"
+          disabled={!followUp.trim()}
+          className="px-5 py-3 rounded-xl bg-white/15 border border-white/20 text-white font-semibold hover:bg-white/25 hover:border-white/30 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Ask →
+        </button>
+      </form>
     </div>
   );
 }

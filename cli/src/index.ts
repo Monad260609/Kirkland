@@ -12,7 +12,7 @@ program
 
 program
   .command("query <q>")
-  .description('Query the on-chain cache (e.g. "price of ETH", "weather in Denver")')
+  .description('Query the on-chain cache (e.g. "price of ETH", "weather in New York")')
   .action(async (q: string) => {
     await queryCommand(q);
   });

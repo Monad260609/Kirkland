@@ -575,7 +575,7 @@ entries[0x8a3f...] = {
 
 entries[0xb2c1...] = {
     data:      '{"temperature":"12","condition":"Partly Cloudy"}',
-    query:     "denver weather",
+    query:     "new york weather",
     seeder:    0xCd34...9e1a,
     timestamp: 1739800030,
     hits:      3,

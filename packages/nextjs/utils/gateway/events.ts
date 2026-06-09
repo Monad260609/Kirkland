@@ -5,6 +5,8 @@ interface GatewayEvent {
   cost: string;
   cached: boolean;
   source?: string;
+  agentId?: string;
+  agentVerified?: boolean;
 }
 
 const clients = new Set<ReadableStreamDefaultController>();

@@ -20,6 +20,21 @@ Cachemarket is a pay-per-call API gateway built on **Monad testnet**. It uses th
                      └──────────────┘
 ```
 
+## Agent Identity (optional)
+
+Every `/api/query` POST can carry a signed agent identity in three extra headers:
+
+```
+X-Agent-Id:  <walletAddress>
+X-Agent-Sig: <signature>
+X-Agent-Ts:  <unix millis>
+```
+
+The agent signs the EIP-191 message `cachemarket-agent:<walletAddress>:<timestamp>` with their wallet key. The server verifies the signature with `viem.verifyMessage` and rejects timestamps older than 60s (replay protection). Verified requests get `agentVerified: true` and the `agentId` stamped onto the response, and the agent id is broadcast on the SSE event stream. Missing or invalid signatures fall through anonymously — the payment flow is unchanged so existing clients keep working.
+
+Server: `packages/nextjs/utils/gateway/agentIdentity.ts`
+Client helpers: `sdk/src/agentIdentity.ts` (`createAgentHeaders`, `getAgentAddress`).
+
 ## Payment Flow (x402)
 
 ### Cache MISS — First caller, pays 0.001 MON
@@ -45,7 +60,7 @@ Cachemarket is a pay-per-call API gateway built on **Monad testnet**. It uses th
 
 ## Smart Contract — DataCache
 
-- **Address**: `0x8aff0f33092efe2af41c67e8e76944d0009a5fca`
+- **Address**: `0xF82441bDCAD5a0BB910798cC3859366cAF2AE413`
 - **Chain**: Monad Testnet (ID: 10143)
 - **TTL**: 60 seconds (configurable by owner)
 
@@ -154,11 +169,13 @@ Check if a MON payment transaction is confirmed on Monad.
 
 | Query | City |
 |---|---|
-| `"weather Denver"` | Denver |
-| `"Denver weather"` | Denver |
-| `"meteo Paris"` | Paris |
+| `"New York weather"` | New York |
+| `"weather in new york"` | New York |
+| `"weather Paris"` | Paris |
 | `"temperature Tokyo"` | Tokyo |
 | `"forecast London"` | London |
+
+Multi-word cities are fully supported ("buenos aires weather", "weather in los angeles").
 
 ### 3. Country Info (REST Countries)
 
@@ -170,7 +187,20 @@ Check if a MON payment transaction is confirmed on Monad.
 | `"Brazil population"` | Brazil |
 | `"capital of Spain"` | Spain |
 
-**Fallback**: Any query that doesn't match weather or country patterns is treated as a crypto price lookup.
+### 4. Swap Quotes (Uniswap on Ethereum mainnet)
+
+| Query | Pair |
+|---|---|
+| `"quote 1 eth to usdc"` | ETH → USDC |
+| `"swap 1 wbtc to dai"` | WBTC → DAI |
+| `"100 usdc in eth"` | USDC → ETH |
+| `"eth -> usdc"` | ETH → USDC (default amount: 1) |
+
+Quotes are read on-chain from the Uniswap V3 **QuoterV2** contract (`0x61fF…B21e`) on Ethereum mainnet — the gateway tries the 0.05% / 0.3% / 1% fee tiers and returns the best output, with the quoter's own gas estimate. No API key. Cached on Monad for 60s like any other entry. Supported tokens: ETH, WETH, USDC, USDT, DAI, WBTC, UNI, LINK.
+
+### 5. AI (Groq)
+
+Any query that matches no other category and is not a known token symbol is answered by Groq (`llama-3.3-70b-versatile`) and cached on-chain. Requires `GROQ_API_KEY`; without it the gateway returns an explicit 502 and nothing is cached or charged beyond the unredeemed payment (retryable).
 
 ## Key Files
 
@@ -182,8 +212,13 @@ Check if a MON payment transaction is confirmed on Monad.
 | `packages/nextjs/app/api/tx-status/route.ts` | Transaction confirmation check |
 | `packages/nextjs/utils/gateway/x402.ts` | Payment verification (checks MON tx on Monad) |
 | `packages/nextjs/utils/gateway/chain.ts` | Viem clients, contract interactions |
-| `packages/nextjs/utils/gateway/detect.ts` | Intent detection (price/weather/country) |
-| `packages/nextjs/utils/gateway/fetchers.ts` | External API fetchers |
+| `packages/nextjs/utils/gateway/detect.ts` | Intent detection (price/weather/country/swap-quote/ai) |
+| `packages/nextjs/utils/gateway/fetchers.ts` | External fetchers (CoinGecko, wttr.in, REST Countries, Groq) |
+| `packages/nextjs/utils/gateway/uniswap.ts` | On-chain QuoterV2 quotes (Ethereum mainnet) |
+| `packages/nextjs/utils/gateway/agentIdentity.ts` | Verify signed agent headers |
+| `packages/nextjs/components/PaymentFlowVisualizer.tsx` | Live x402 round-trip timeline |
+| `packages/nextjs/components/gateway/LiveFeed.tsx` | SSE consumer — real-time paid-query feed |
+| `packages/nextjs/components/gateway/MyCalls.tsx` | Local call history (reads callHistory.ts) |
 | `packages/nextjs/utils/gateway/events.ts` | SSE event system |
 | `packages/nextjs/hooks/gateway/useGatewayQuery.ts` | React hook for full x402 flow |
 | `packages/foundry/contracts/DataCache.sol` | On-chain cache smart contract |
@@ -196,6 +231,7 @@ DATACACHE_ADDRESS=0x8aff...5fca        # DataCache contract address
 SERVER_WALLET=0x...                    # Wallet that receives MON payments
 NEXT_PUBLIC_SERVER_WALLET=0x...        # Same, exposed to client
 GROQ_API_KEY=                          # Optional, for AI queries
+ETHEREUM_RPC_URL=                      # Optional, Ethereum mainnet RPC for Uniswap quotes
 ```
 
 ## Tech Stack
@@ -204,4 +240,5 @@ GROQ_API_KEY=                          # Optional, for AI queries
 - **Smart Contract**: Solidity 0.8.20, Foundry
 - **Blockchain**: Monad Testnet (chain ID 10143)
 - **On-chain interaction**: viem
-- **External APIs**: CoinGecko, wttr.in, REST Countries
+- **External APIs**: CoinGecko, wttr.in, REST Countries, Uniswap
+- **Agent identity**: EIP-191 signed HTTP headers verified with `viem.verifyMessage`

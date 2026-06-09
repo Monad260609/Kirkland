@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkOnChainCache, hashQuery, storeResultOnChain } from "~~/utils/gateway/chain";
+import { verifyAgentIdentity } from "~~/utils/gateway/agentIdentity";
+import { checkOnChainCache, hashQuery, recordHitOnChain, storeResultOnChain } from "~~/utils/gateway/chain";
 import { detectIntent } from "~~/utils/gateway/detect";
 import { emitEvent } from "~~/utils/gateway/events";
 import { fetchFromSource } from "~~/utils/gateway/fetchers";
-import { PRICE_CACHE_HIT, PRICE_CACHE_MISS, paymentRequiredResponse, verifyPayment } from "~~/utils/gateway/x402";
+import {
+  PRICE_CACHE_HIT,
+  PRICE_CACHE_MISS,
+  markPaymentRedeemed,
+  paymentRequiredResponse,
+  verifyPayment,
+} from "~~/utils/gateway/x402";
 
 export const dynamic = "force-dynamic";
 
@@ -34,17 +41,25 @@ export async function POST(req: NextRequest) {
     }
 
     const payer = payment.payer;
+    const agent = await verifyAgentIdentity(req.headers);
 
     // ══════════════════════════════════════════════════════
     //  CACHE HIT — 0.0001 MON (10x cheaper)
     // ══════════════════════════════════════════════════════
     if (isCached) {
+      // Record the hit on-chain so getStats reflects real usage.
+      // Fire-and-forget: a failed counter update must never block the response.
+      recordHitOnChain(qHash).catch(() => undefined);
+
+      markPaymentRedeemed(paymentTxHash);
       emitEvent({
         type: "cache_hit",
         query: input,
         user: payer.slice(0, 6) + "..." + payer.slice(-4),
         cost: `${PRICE_CACHE_HIT} MON`,
         cached: true,
+        agentId: agent.verified ? agent.agentId : undefined,
+        agentVerified: agent.verified,
       });
 
       return NextResponse.json({
@@ -54,6 +69,8 @@ export async function POST(req: NextRequest) {
         cached: true,
         cost: `${PRICE_CACHE_HIT} MON`,
         source: "on-chain cache",
+        agentId: agent.verified ? agent.agentId : undefined,
+        agentVerified: agent.verified,
         timestamp: Date.now(),
       });
     }
@@ -62,8 +79,18 @@ export async function POST(req: NextRequest) {
     //  CACHE MISS — 0.001 MON (first to pay)
     // ══════════════════════════════════════════════════════
     const freshData = await fetchFromSource(intent.type, intent.param);
+
+    // Never seed upstream failures into the cache: a cached {error} would be
+    // served (and charged) to every subsequent reader for the full TTL.
+    // The payment stays unredeemed so the client can retry with the same tx.
+    const parsedFresh = JSON.parse(freshData);
+    if (parsedFresh && typeof parsedFresh === "object" && "error" in parsedFresh) {
+      return NextResponse.json({ error: `Upstream source failed: ${parsedFresh.error}` }, { status: 502 });
+    }
+
     const txHash = await storeResultOnChain(qHash, input, freshData, payer);
 
+    markPaymentRedeemed(paymentTxHash);
     emitEvent({
       type: "query",
       query: input,
@@ -71,6 +98,8 @@ export async function POST(req: NextRequest) {
       cost: `${PRICE_CACHE_MISS} MON`,
       cached: false,
       source: intent.type,
+      agentId: agent.verified ? agent.agentId : undefined,
+      agentVerified: agent.verified,
     });
 
     return NextResponse.json({
@@ -83,6 +112,8 @@ export async function POST(req: NextRequest) {
       txHash,
       explorerUrl: `https://testnet.monadexplorer.com/tx/${txHash}`,
       source: intent.type,
+      agentId: agent.verified ? agent.agentId : undefined,
+      agentVerified: agent.verified,
       timestamp: Date.now(),
     });
   } catch (err: unknown) {

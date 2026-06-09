@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { parseEther } from "viem";
-import { useAccount, useSendTransaction } from "wagmi";
+import { useAccount, useSendTransaction, useSignMessage } from "wagmi";
 
 const SERVER_WALLET = process.env.NEXT_PUBLIC_SERVER_WALLET as `0x${string}`;
 
@@ -16,18 +16,54 @@ export interface GatewayResult {
   txHash?: string;
   explorerUrl?: string;
   source: string;
+  agentId?: string;
+  agentVerified?: boolean;
   timestamp: number;
+}
+
+interface AgentHeaders {
+  "X-Agent-Id": string;
+  "X-Agent-Sig": string;
+  "X-Agent-Ts": string;
+}
+
+export type FlowStepKey = "identity" | "payment" | "confirmation" | "cache" | "result";
+
+export interface FlowState {
+  currentStep: FlowStepKey | null;
+  agentId?: string;
+  agentVerified: boolean;
+  paymentTxHash?: string;
+  paymentAmount?: string;
+  cached?: boolean;
+  txHash?: string;
+  explorerUrl?: string;
+}
+
+const INITIAL_FLOW: FlowState = {
+  currentStep: null,
+  agentVerified: false,
+};
+
+interface PendingPayment {
+  txHash: string;
+  query: string;
 }
 
 export function useGatewayQuery() {
   const { address } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
+  const { signMessageAsync } = useSignMessage();
   const [result, setResult] = useState<GatewayResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [flow, setFlow] = useState<FlowState>(INITIAL_FLOW);
+  // A confirmed but not-yet-redeemed payment, kept after a post-payment
+  // failure so the user can retry without paying twice.
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
 
   /**
-   * @param query  - Natural language query ("eth price", "Denver weather", etc.)
+   * @param query  - Natural language query ("eth price", "New York weather", etc.)
    * @param cachedHint - Pass true/false from the pre-check to skip the redundant 402 call.
    *                     true  → cache hit  → pay 0.0001 MON
    *                     false → cache miss → pay 0.001 MON
@@ -38,17 +74,37 @@ export function useGatewayQuery() {
       setError(null);
       setResult(null);
       setIsPending(true);
+      setFlow({ ...INITIAL_FLOW, currentStep: "identity" });
 
       try {
         if (!address) throw new Error("Connect your wallet first");
 
+        // ── Step 1: sign agent identity (before payment so the visualizer reads naturally) ──
+        const agentTs = Date.now().toString();
+        const agentMessage = `cachemarket-agent:${address}:${agentTs}`;
+        let agentHeaders: AgentHeaders | null = null;
+        try {
+          const agentSig = await signMessageAsync({ message: agentMessage });
+          agentHeaders = {
+            "X-Agent-Id": address,
+            "X-Agent-Sig": agentSig,
+            "X-Agent-Ts": agentTs,
+          };
+          setFlow(f => ({ ...f, agentId: address, agentVerified: true }));
+        } catch {
+          // User rejected signature — proceed as anonymous
+          setFlow(f => ({ ...f, agentVerified: false }));
+        }
+
+        // ── Step 2: resolve cache status + price ──
+        setFlow(f => ({ ...f, currentStep: "payment" }));
         let price: string;
+        let cached: boolean;
 
         if (cachedHint !== undefined) {
-          // We already know from the pre-check — skip the extra API call
+          cached = cachedHint;
           price = cachedHint ? "0.0001" : "0.001";
         } else {
-          // Fallback: ask the backend for the cache status
           const res = await fetch("/api/query", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -59,45 +115,64 @@ export function useGatewayQuery() {
             const body = await res.json();
             if (res.ok) {
               setResult(body);
+              setFlow(f => ({
+                ...f,
+                currentStep: "result",
+                cached: body.cached,
+                txHash: body.txHash,
+                explorerUrl: body.explorerUrl,
+              }));
               return body as GatewayResult;
             }
             throw new Error(body.error || "Query failed");
           }
 
           const paymentInfo = await res.json();
-          price = paymentInfo.cached ? "0.0001" : "0.001";
+          cached = paymentInfo.cached ?? false;
+          price = cached ? "0.0001" : "0.001";
         }
+        setFlow(f => ({ ...f, cached, paymentAmount: `${price} MON` }));
 
-        // Send MON payment
-        const paymentTxHash = await sendTransactionAsync({
-          to: SERVER_WALLET,
-          value: parseEther(price),
-        });
+        // ── Step 3: send MON payment (or reuse a kept one) ──
+        const reusingPayment = pendingPayment !== null && pendingPayment.query === query;
+        let paymentTxHash: `0x${string}`;
 
-        // Wait for confirmation on Monad (poll every 2.5s to avoid 429)
-        let confirmed = false;
-        for (let i = 0; i < 20; i++) {
-          await new Promise(r => setTimeout(r, 2500));
-          try {
-            const checkRes = await fetch(`/api/tx-status?hash=${paymentTxHash}`);
-            if (checkRes.ok) {
-              const status = await checkRes.json();
-              if (status.confirmed) {
-                confirmed = true;
-                break;
+        if (reusingPayment) {
+          paymentTxHash = pendingPayment.txHash as `0x${string}`;
+          setFlow(f => ({ ...f, paymentTxHash, currentStep: "cache" }));
+        } else {
+          paymentTxHash = await sendTransactionAsync({
+            to: SERVER_WALLET,
+            value: parseEther(price),
+          });
+          setFlow(f => ({ ...f, paymentTxHash, currentStep: "confirmation" }));
+
+          // ── Step 4: wait for confirmation on Monad ──
+          let confirmed = false;
+          for (let i = 0; i < 20; i++) {
+            await new Promise(r => setTimeout(r, 2500));
+            try {
+              const checkRes = await fetch(`/api/tx-status?hash=${paymentTxHash}`);
+              if (checkRes.ok) {
+                const status = await checkRes.json();
+                if (status.confirmed) {
+                  confirmed = true;
+                  break;
+                }
               }
+            } catch {
+              // continue polling
             }
-          } catch {
-            // continue polling
           }
+
+          if (!confirmed) throw new Error("Payment transaction not confirmed");
+
+          // Small delay before retry to let the RPC breathe
+          await new Promise(r => setTimeout(r, 1000));
         }
 
-        if (!confirmed) throw new Error("Payment transaction not confirmed");
-
-        // Small delay before retry to let the RPC breathe
-        await new Promise(r => setTimeout(r, 1000));
-
-        // Retry with payment proof (with backoff on 500 errors)
+        // ── Step 5: retry with payment proof + agent headers ──
+        setFlow(f => ({ ...f, currentStep: "cache" }));
         let retryRes: Response | null = null;
         for (let attempt = 0; attempt < 4; attempt++) {
           retryRes = await fetch("/api/query", {
@@ -105,11 +180,11 @@ export function useGatewayQuery() {
             headers: {
               "Content-Type": "application/json",
               "X-PAYMENT": paymentTxHash,
+              ...(agentHeaders ?? {}),
             },
             body: JSON.stringify({ query }),
           });
 
-          // If we got a 500, retry with backoff (transient RPC error)
           if (retryRes.status >= 500 && attempt < 3) {
             await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt)));
             continue;
@@ -119,12 +194,33 @@ export function useGatewayQuery() {
 
         if (!retryRes || !retryRes.ok) {
           const body = retryRes ? await retryRes.json() : { error: "No response" };
-          throw new Error(body.error || "Query failed after payment");
+          const reason: string = body.error || "Query failed after payment";
+
+          if (retryRes && retryRes.status === 402 && reusingPayment) {
+            // Kept payment no longer valid (already redeemed, or the cache
+            // state flipped and the old amount is insufficient) — drop it.
+            setPendingPayment(null);
+            throw new Error(`${reason} — the kept payment can't be reused, please pay again`);
+          }
+
+          // Server failed after a confirmed payment: keep the tx hash so the
+          // next attempt skips the wallet entirely.
+          setPendingPayment({ txHash: paymentTxHash, query });
+          throw new Error(reason);
         }
 
-        const data = await retryRes.json();
+        const data = (await retryRes.json()) as GatewayResult;
+        setPendingPayment(null);
         setResult(data);
-        return data as GatewayResult;
+        setFlow(f => ({
+          ...f,
+          currentStep: "result",
+          cached: data.cached,
+          txHash: data.txHash,
+          explorerUrl: data.explorerUrl,
+          agentVerified: data.agentVerified ?? f.agentVerified,
+        }));
+        return data;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         setError(message);
@@ -133,8 +229,14 @@ export function useGatewayQuery() {
         setIsPending(false);
       }
     },
-    [address, sendTransactionAsync],
+    [address, sendTransactionAsync, signMessageAsync, pendingPayment],
   );
 
-  return { queryGateway, result, error, isPending };
+  const resetFlow = useCallback(() => {
+    setFlow(INITIAL_FLOW);
+    setResult(null);
+    setError(null);
+  }, []);
+
+  return { queryGateway, result, error, isPending, flow, resetFlow, pendingPayment };
 }

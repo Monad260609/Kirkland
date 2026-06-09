@@ -23,15 +23,24 @@ export async function fetchPrice(token: string): Promise<string> {
   const res = await fetchWithRetry(
     `https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd&include_24hr_change=true`,
   );
+  // Distinguish upstream failure from a genuinely unknown token — a 429
+  // must never masquerade as "token not found".
+  if (!res.ok) {
+    const reason = res.status === 429 ? "rate-limited" : `HTTP ${res.status}`;
+    return JSON.stringify({ error: `CoinGecko unavailable (${reason}) — retry in a moment` });
+  }
   const json = await res.json();
   const data = json[token];
-  if (!data) return JSON.stringify({ error: `Token "${token}" not found` });
+  if (!data) return JSON.stringify({ error: `Token "${token}" not found on CoinGecko` });
   return JSON.stringify(data);
 }
 
 /// Fetch weather from wttr.in (free, no API key)
 export async function fetchWeather(city: string): Promise<string> {
   const res = await fetchWithRetry(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+  if (!res.ok) {
+    return JSON.stringify({ error: `wttr.in unavailable (HTTP ${res.status}) — retry in a moment` });
+  }
   const json = await res.json();
   const cur = json.current_condition?.[0];
   if (!cur) return JSON.stringify({ error: `City "${city}" not found` });
@@ -49,6 +58,9 @@ export async function fetchCountry(country: string): Promise<string> {
   const res = await fetchWithRetry(
     `https://restcountries.com/v3.1/name/${encodeURIComponent(country)}?fields=name,capital,population,currencies,region,flags`,
   );
+  if (!res.ok && res.status !== 404) {
+    return JSON.stringify({ error: `REST Countries unavailable (HTTP ${res.status}) — retry in a moment` });
+  }
   const json = await res.json();
   if (json.status === 404 || json.message) return JSON.stringify({ error: `Country "${country}" not found` });
   const c = json[0];
@@ -63,6 +75,60 @@ export async function fetchCountry(country: string): Promise<string> {
   });
 }
 
+/// Fetch a Uniswap quote (Ethereum mainnet pools, cached on Monad).
+/// param shape: "<amountIn>:<tokenIn>:<tokenOut>" e.g. "1:eth:usdc"
+export async function fetchSwapQuote(param: string): Promise<string> {
+  const [amount, tokenIn, tokenOut] = param.split(":");
+  if (!tokenIn || !tokenOut) {
+    return JSON.stringify({ error: `Invalid swap param: ${param}` });
+  }
+  const { fetchUniswapQuote } = await import("./uniswap");
+  try {
+    const quote = await fetchUniswapQuote(tokenIn, tokenOut, amount || "1");
+    return JSON.stringify(quote);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return JSON.stringify({ error: message });
+  }
+}
+
+/// Answer free-form questions with Groq (Llama 3.3 70B).
+/// Returns {error} when no key is configured — the route turns that into a
+/// 502 without caching, so nothing fake ever lands on-chain.
+export async function fetchAI(question: string): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return JSON.stringify({ error: "AI category requires GROQ_API_KEY on the gateway" });
+  }
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 200,
+      messages: [
+        { role: "system", content: "Answer factually in at most two short sentences." },
+        { role: "user", content: question },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    return JSON.stringify({ error: `Groq API failed: ${res.status}` });
+  }
+
+  const json = await res.json();
+  const answer = json.choices?.[0]?.message?.content?.trim();
+  if (!answer) {
+    return JSON.stringify({ error: "Groq returned an empty answer" });
+  }
+  return JSON.stringify({ question, answer, model: "llama-3.3-70b-versatile" });
+}
+
 /// Route to the right fetcher based on intent type
 export async function fetchFromSource(type: string, param: string): Promise<string> {
   switch (type) {
@@ -72,6 +138,10 @@ export async function fetchFromSource(type: string, param: string): Promise<stri
       return fetchWeather(param);
     case "country":
       return fetchCountry(param);
+    case "swap-quote":
+      return fetchSwapQuote(param);
+    case "ai":
+      return fetchAI(param);
     default:
       return JSON.stringify({ error: "Unknown query type" });
   }

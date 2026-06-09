@@ -8,6 +8,8 @@ export interface CallEntry {
   txHash?: string;
   explorerUrl?: string;
   source: string;
+  agentId?: string;
+  agentVerified?: boolean;
   timestamp: number;
 }
 

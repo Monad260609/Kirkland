@@ -17,20 +17,22 @@ const SKIP_WORDS = /^(price|of|the|a|an|get|give|what|is|are)$/;
  * Detect the intent of a natural language query.
  *
  * @example
- * detectIntent("price of ETH")      // { type: "price", param: "ethereum" }
- * detectIntent("weather in Denver") // { type: "weather", param: "denver" }
- * detectIntent("France info")       // { type: "country", param: "france" }
- * detectIntent("what is gravity")   // { type: "ai", param: "what is gravity" }
+ * detectIntent("price of ETH")        // { type: "price", param: "ethereum" }
+ * detectIntent("weather in New York") // { type: "weather", param: "new york" }
+ * detectIntent("France info")         // { type: "country", param: "france" }
+ * detectIntent("what is gravity")     // { type: "ai", param: "what is gravity" }
  */
 export function detectIntent(input: string): Intent {
   const lower = input.toLowerCase().trim();
 
   // ── Weather ──────────────────────────────────────────────
   if (/weather|temperature|forecast/.test(lower)) {
+    // \b guards keep city names intact ("Beijing", "Singapore" both contain "in")
     const city = lower
-      .replace(/weather|temperature|forecast|in/g, "")
+      .replace(/\b(weather|temperature|forecast|in|for)\b/g, "")
+      .replace(/\s+/g, " ")
       .trim();
-    return { type: "weather", param: city || "denver" };
+    return { type: "weather", param: city || "new york" };
   }
 
   // ── Crypto price ─────────────────────────────────────────

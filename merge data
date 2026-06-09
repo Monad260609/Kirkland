@@ -1,5 +1,0 @@
-I want you to keep the fiansoclean version for most of the code, everything on the back end and so on.
-I only want you to keep these features from the fianso branch:
-- the “about us” button on all pages
-- on the home page, replace the “launch app” button with the white “launch app” button at the bottom of the branch page
-- the “launch app” button should open the app in a new window

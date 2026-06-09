@@ -274,7 +274,7 @@ The `backend/` directory is an independent Hono.js server with the same gateway 
 
 ### How the blockchain layer integrates
 
-**Smart Contract:** `DataCache.sol` deployed on Monad Testnet at `0x8aff0f33092efe2af41c67e8e76944d0009a5fca`
+**Smart Contract:** `DataCache.sol` deployed on Monad Testnet at `0xF82441bDCAD5a0BB910798cC3859366cAF2AE413`
 
 All components (frontend, backend, CLI, SDK) share identical contract interaction patterns:
 
@@ -361,7 +361,7 @@ Based on the `/about` page and git history, the team is:
 
 ### Fully implemented and working
 
-- **Smart contract** (`DataCache.sol`): Deployed and operational on Monad Testnet at `0x8aff0f33092efe2af41c67e8e76944d0009a5fca`
+- **Smart contract** (`DataCache.sol`): Deployed and operational on Monad Testnet at `0xF82441bDCAD5a0BB910798cC3859366cAF2AE413`
 - **Next.js API routes**: All 4 routes functional (`/api/query`, `/api/stats`, `/api/events`, `/api/tx-status`)
 - **Landing page** (`/`): Hero, 3 CTA buttons, inline How It Works and Dev Tools sections, live on-chain stats
 - **Dashboard** (`/dashboard`): 3 data category cards with dropdown selectors
@@ -550,7 +550,7 @@ packages/nextjs/components/scaffold-eth/RainbowKitCustomConnectButton/ (all file
 
 ### What must never be changed
 
-- **Smart contract address** (`0x8aff0f33092efe2af41c67e8e76944d0009a5fca`): Hardcoded in 4 packages
+- **Smart contract address** (`0xF82441bDCAD5a0BB910798cC3859366cAF2AE413`): Hardcoded in 4 packages
 - **Query hashing logic**: `keccak256(query.toLowerCase().trim())` — must be identical everywhere or cache lookups break
 - **Payment prices**: 0.001 MON (miss) / 0.0001 MON (hit) — hardcoded in `x402.ts` and `useGatewayQuery.ts`
 - **Chain ID**: 10143 (Monad Testnet) — referenced across all config files

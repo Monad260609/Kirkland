@@ -9,12 +9,12 @@ const TERMINAL_LINES = [
   { text: "Checking on-chain cache...", type: "info" as const, delay: 200 },
   { text: "Cache miss — fetching from CoinGecko...", type: "error" as const, delay: 600 },
   { text: "Stored on-chain (tx: 0xab3f...c821)", type: "success" as const, delay: 400 },
-  { text: "ETH: $3,847.21 — Cost: $0.01 (seeder)", type: "output" as const, delay: 100 },
+  { text: "ETH: $1,648.23 — Cost: 0.001 MON (seeder)", type: "output" as const, delay: 100 },
   { text: "", type: "output" as const, delay: 800 },
   { text: 'cachemarket query "price of ETH"', type: "command" as const, delay: 400 },
   { text: "Checking on-chain cache...", type: "info" as const, delay: 200 },
   { text: "Cache hit!", type: "success" as const, delay: 300 },
-  { text: "ETH: $3,847.21 — Cost: $0.0001 (100x cheaper)", type: "output" as const, delay: 100 },
+  { text: "ETH: $1,648.23 — Cost: 0.0001 MON (10x cheaper)", type: "output" as const, delay: 100 },
 ];
 
 export function DevToolsContent() {
@@ -134,7 +134,7 @@ export function DevToolsContent() {
               <span className="text-white">console.</span>
               <span className="text-blue-400">log</span>
               <span className="text-white">(result.data) </span>
-              <span className="text-white/50">{"// $3,847.21"}</span>
+              <span className="text-white/50">{"// $1,648.23"}</span>
               {"\n"}
               <span className="text-white">console.</span>
               <span className="text-blue-400">log</span>
@@ -144,7 +144,7 @@ export function DevToolsContent() {
               <span className="text-white">console.</span>
               <span className="text-blue-400">log</span>
               <span className="text-white">(result.cost) </span>
-              <span className="text-white/50">{"// $0.0001"}</span>
+              <span className="text-white/50">{"// 0.0001 MON"}</span>
             </code>
           </pre>
         </motion.div>

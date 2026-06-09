@@ -28,7 +28,7 @@ export const monadTestnet = defineChain({
 // ── DataCache contract ─────────────────────────────────────
 
 export const CACHE_ADDRESS =
-  "0x8aff0f33092efe2af41c67e8e76944d0009a5fca" as const;
+  "0xF82441bDCAD5a0BB910798cC3859366cAF2AE413" as const;
 
 export const CACHE_ABI = [
   {

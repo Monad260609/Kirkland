@@ -1,30 +1,37 @@
 # Cachemarket
 
-An on-chain data caching protocol built on Monad. The first requester seeds the cache and pays full price; every subsequent requester reads from on-chain storage for 100x less. No API keys, no subscriptions — just a wallet.
+An on-chain data caching protocol built on Monad. The first requester seeds the cache and pays full price; every subsequent requester reads from on-chain storage for ~10x less. No API keys, no subscriptions — just a wallet.
 
-## Built for Monad Blitz Denver 2025
+## Built for Monad Blitz Denver 2026, revived for Monad Blitz NYC
 
-Cachemarket was built in one day on February 17, 2025 at **Monad Blitz Denver**, a hackathon challenging developers to build consumer dApps on the Monad blockchain. We wanted to prove a simple idea: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
+Cachemarket was built in one day on February 17, 2026 at **Monad Blitz Denver**, a hackathon challenging developers to build consumer dApps on the Monad blockchain. It finished as a finalist. We wanted to prove a simple idea: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
 
-The result is a data freshness marketplace that uses the **x402 payment protocol** (HTTP 402 Payment Required) to let anyone — humans or AI agents — query real-world data (crypto prices, weather, country info) and pay per request on-chain. The first requester seeds the cache for 0.001 MON. Everyone else reads it for 0.0001 MON. After 60 seconds the data expires and the cycle restarts.
+For **Monad Blitz NYC (June 9, 2026, @ ETHConf)** the project picks up where Denver left off and adds:
+1. **Verifiable agent identity** — every gateway request can carry a signed wallet identity that the server verifies before returning data.
+2. **Uniswap data category** — swap quotes read directly from Uniswap V3 pools on Ethereum mainnet (QuoterV2, no API key), cached on Monad like any other entry.
+3. **AI category** — free-form questions answered by Groq (Llama 3.3 70B) and cached on-chain.
+4. **PaymentFlowVisualizer** — a live timeline of the x402 round-trip so judges (and users) can see exactly what each MON pays for.
+5. **Live activity feed** — every paid query streams onto the dashboard in real time (SSE), with verified agent badges.
 
 ## How it works
 
-1. You ask a natural language question ("price of ETH", "weather in Denver", "Japan info")
+1. You ask a natural language question ("price of ETH", "weather in New York", "quote 1 ETH to USDC")
 2. The gateway checks the `DataCache` smart contract on Monad for a cached answer
 3. **Cache hit** — you pay 0.0001 MON and get the data instantly
 4. **Cache miss** — you pay 0.001 MON, the gateway fetches fresh data from an external API, stores it on-chain, and returns it to you
-5. The data lives on-chain for 60 seconds. During that window, every subsequent reader pays 100x less
+5. The data lives on-chain for 60 seconds. During that window, every subsequent reader pays 10x less
 6. After the TTL expires, the next requester becomes the new seeder
 
+Optionally, each request can prove **who** is asking by signing `cachemarket-agent:<address>:<timestamp>` with a wallet key and attaching three headers (`X-Agent-Id`, `X-Agent-Sig`, `X-Agent-Ts`). The gateway verifies the signature, stamps the response with `agentVerified: true`, and emits the agent id into the event stream. Missing or invalid signatures fall through anonymously.
+
 ```
-User / Agent
-     │
-     ▼  POST /api/query (no payment header)
+User / Agent                                            (optional)
+     │                                                  X-Agent-* headers
+     ▼  POST /api/query (no payment)
   Gateway  ──────►  402 Payment Required { price, payTo, chainId }
      │
      ▼  Send MON to payTo
-  Gateway  ──────►  Verify tx on-chain
+  Gateway  ──────►  Verify tx on-chain · verify agent signature
      │
      ├── Cache HIT  → return cached data (0.0001 MON)
      └── Cache MISS → fetch from API → store on Monad → return fresh data (0.001 MON)
@@ -32,18 +39,21 @@ User / Agent
 
 ## Data sources
 
-| Category | API | Example queries |
-|----------|-----|-----------------|
+| Category | Source | Example queries |
+|----------|--------|-----------------|
 | Crypto prices | CoinGecko | "ETH price", "price of bitcoin", "SOL" |
-| Weather | wttr.in | "Denver weather", "weather in Paris" |
+| Weather | wttr.in | "New York weather", "weather in Paris" |
 | Country info | REST Countries | "France info", "Japan country" |
-| AI fallback | Groq (Llama 3.3 70B) | Any other question (optional) |
+| Swap quotes | Uniswap V3 QuoterV2 (on-chain, Ethereum mainnet) | "quote 1 ETH to USDC", "1 WBTC in DAI" |
+| AI fallback | Groq (Llama 3.3 70B) | Any other question |
+
+Uniswap quotes are read directly from the QuoterV2 contract across the three standard fee tiers — no API key, nothing that can be revoked. The result — amount out, rate, winning pool, gas estimate — is cached on Monad for 60s; the response page also exposes an "Execute on Uniswap" deep link for the human-side swap.
 
 ## Setup
 
 1. Install dependencies:
    ```bash
-   yarn install
+   npm install
    ```
 
 2. Copy the environment file and fill in your values:
@@ -52,17 +62,19 @@ User / Agent
    ```
 
 3. Edit `.env.local` with:
-   - `NEXT_PUBLIC_SERVER_WALLET` — Wallet address that receives payments
-   - `BACKEND_PRIVATE_KEY` — Private key for signing `storeResult()` transactions
-   - `DATACACHE_ADDRESS` — Deployed DataCache contract address (see `packages/foundry/deployments/10143.json`)
-   - `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` — WalletConnect project ID
+   - `BACKEND_PRIVATE_KEY` — Private key of the DataCache owner (used to write to chain)
+   - `SERVER_WALLET` / `NEXT_PUBLIC_SERVER_WALLET` — Public address matching the key above
+   - `DATACACHE_ADDRESS` — Deployed DataCache contract address (defaults to the Blitz NYC deployment)
+   - `GROQ_API_KEY` — Groq API key for the AI category (free at console.groq.com; without it AI queries return an explicit 502)
+   - `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` — WalletConnect project ID (optional)
+   - `ETHEREUM_RPC_URL` — Ethereum mainnet RPC for Uniswap quotes (optional, defaults to a public endpoint)
 
 4. Start the app:
    ```bash
-   yarn start
+   npm run start
    ```
 
-   Visit `http://localhost:3000`
+   Visit `http://localhost:3000`.
 
 ## Using the CLI
 
@@ -80,7 +92,7 @@ cachemarket stats
 ## Using the SDK
 
 ```typescript
-import { CacheMarket } from "@cachemarket/sdk";
+import { CacheMarket, createAgentHeaders, executeSwap } from "@cachemarket/sdk";
 
 const client = new CacheMarket({
   privateKey: "0x...",
@@ -91,7 +103,22 @@ const client = new CacheMarket({
 const { isCached, data } = await client.checkCache("ETH price");
 
 // Full query (cache check → fetch if miss → store on-chain)
-const result = await client.query("weather in Denver");
+const result = await client.query("weather in New York");
+
+// Sign a request as a verifiable agent (HTTP gateway flow)
+const headers = await createAgentHeaders("0x..."); // { X-Agent-Id, X-Agent-Sig, X-Agent-Ts }
+await fetch("https://your-gateway.example.com/api/query", { method: "POST", headers, body: ... });
+
+// Execute a real Uniswap V3 swap on Ethereum mainnet
+// (QuoterV2 quote → approve if ERC-20 input → SwapRouter02 exactInputSingle)
+const swap = await executeSwap({
+  tokenIn: "eth",
+  tokenOut: "usdc",
+  amountIn: "0.5",
+  privateKey: "0x...",
+  slippageBps: 50, // 0.5%
+});
+console.log(swap.txHash, swap.quotedAmountOut, swap.feeTier);
 ```
 
 ## Smart contract
@@ -101,7 +128,7 @@ const result = await client.query("weather in Denver");
 | Function | Description |
 |----------|-------------|
 | `checkCache(bytes32 queryHash)` | Returns whether data is cached and not expired |
-| `storeResult(bytes32, string, string, address)` | Stores fresh data on-chain with a 60s TTL |
+| `storeResult(bytes32, string, string, address)` | Stores fresh data on-chain with a 60s TTL (owner only) |
 | `getResult(bytes32 queryHash)` | Returns data, seeder address, timestamp, and hit count |
 | `getStats()` | Returns total seeds, cache hits, and queries |
 
@@ -116,20 +143,19 @@ Source: [`packages/foundry/contracts/DataCache.sol`](packages/foundry/contracts/
 | Smart contracts | Solidity, Foundry |
 | Blockchain | Monad Testnet (EVM-compatible, 10,000 TPS, sub-second finality) |
 | Payment protocol | x402 (HTTP 402 Payment Required) |
-| Backend (alt) | Hono.js |
-| External APIs | CoinGecko, wttr.in, REST Countries, Groq |
+| Agent identity | EIP-191 signed headers, viem `verifyMessage` |
+| External APIs | CoinGecko, wttr.in, REST Countries, Uniswap, Groq |
 
 ## Project structure
 
 ```
 cachemarket/
 ├── packages/
-│   ├── nextjs/          # Main app (frontend + API routes)
+│   ├── nextjs/          # Main app (frontend + API routes + gateway logic)
 │   └── foundry/         # Solidity contracts + Foundry tooling
-├── backend/             # Standalone Hono.js gateway (port 4402)
 ├── cli/                 # CLI tool — cachemarket query "..."
 ├── sdk/                 # TypeScript SDK — @cachemarket/sdk
-└── docs/                # Full technical reference
+└── docs/                # Technical references
 ```
 
 > For the full technical reference (component docs, hook internals, navigation logic, state management), see [`docs/TECHNICAL_REFERENCE.md`](docs/TECHNICAL_REFERENCE.md).
@@ -138,7 +164,7 @@ cachemarket/
 
 Every API call today requires authentication, rate limits, and subscriptions. AI agents can't pay for data programmatically. Developers manage dozens of API keys across services. And when two people ask the same question seconds apart, the same data gets fetched twice.
 
-Cachemarket removes all of that. One on-chain contract, one payment rail, zero API keys. The first person to ask pays for fresh data and stores it on Monad. Everyone who asks the same question within 60 seconds reads from on-chain storage at 1/100th the cost. The cache key is a keccak256 hash of the normalized query, so identical questions always resolve to the same entry.
+Cachemarket removes all of that. One on-chain contract, one payment rail, zero API keys. The first person to ask pays for fresh data and stores it on Monad. Everyone who asks the same question within 60 seconds reads from on-chain storage at 1/10th the cost. The cache key is a keccak256 hash of the normalized query, so identical questions always resolve to the same entry.
 
 Built on Monad's sub-second finality and sub-cent transaction costs, micropayments are practical for the first time — paying 0.0001 MON per cached read is economically viable because the chain makes it so.
 
@@ -151,10 +177,20 @@ Built on Monad's sub-second finality and sub-cent transaction costs, micropaymen
 
 ## Team
 
-Built by three students from **DeVinci Blockchain** (Paris, France) at Monad Blitz Denver, February 17, 2025.
+### Monad Blitz NYC (June 9, 2026)
+
+| Name | Role | Links |
+|------|------|-------|
+| **Sofiane Ben Taleb** | Full-Stack & Smart Contracts | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
+| **Johann Cali** | Builder | [GitHub](https://github.com/JohannCFi) |
+| **Jean** | Builder | [GitHub](https://github.com/vassCaR) |
+
+### Monad Blitz Denver (February 17, 2026) — original protocol
+
+Built in one day by three students from **DeVinci Blockchain** (Paris, France). Finalist.
 
 | Name | Role | Links |
 |------|------|-------|
 | **Sofiane Ben Taleb** | Full-Stack & Smart Contracts | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
 | **Armand Sechon** | Backend & Infrastructure | [GitHub](https://github.com/STOOKEEE) · [LinkedIn](https://www.linkedin.com/in/armand-sechon/) |
-| **Noe Wales** | Frontend & Design | [GitHub](https://github.com/CHAAIISE) · [LinkedIn](https://www.linkedin.com/in/no%C3%A9-w/) |
+| **Noé Wales** | Frontend & Design | [GitHub](https://github.com/CHAAIISE) · [LinkedIn](https://www.linkedin.com/in/no%C3%A9-w/) |

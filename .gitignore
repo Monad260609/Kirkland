@@ -1,14 +1,6 @@
 # dependencies
 node_modules
 
-# yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-
 # eslint
 .eslintcache
 
@@ -48,5 +40,6 @@ CLAUDE.md
 .mcp.json
 opencode.json
 
-# lock files (keep only yarn.lock)
+# lock files (keep only the root package-lock.json)
 pnpm-lock.yaml
+yarn.lock
