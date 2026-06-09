@@ -2,31 +2,31 @@ import { ChainClient, hashQuery, EXPLORER_TX } from "./chain.js";
 import { detectIntent } from "./detect.js";
 import { fetchExternal } from "./fetchers.js";
 import type {
-  CacheMarketConfig,
+  KirklandConfig,
   CacheCheckResult,
   QueryResult,
   CacheStats,
 } from "./types.js";
 
 /**
- * CacheMarket SDK client.
+ * Kirkland SDK client.
  *
  * @example
  * ```ts
- * import { CacheMarket } from "@cachemarket/sdk";
+ * import { Kirkland } from "@kirkland/sdk";
  *
- * const client = new CacheMarket({ privateKey: "0x..." });
+ * const client = new Kirkland({ privateKey: "0x..." });
  *
  * const result = await client.query("price of ETH");
  * console.log(result.data); // { token: "ethereum", usd: 1989, ... }
  * console.log(result.cached); // true / false
  * ```
  */
-export class CacheMarket {
+export class Kirkland {
   private chain: ChainClient;
   private groqApiKey?: string;
 
-  constructor(config: CacheMarketConfig = {}) {
+  constructor(config: KirklandConfig = {}) {
     this.chain = new ChainClient(config.rpcUrl, config.privateKey);
     this.groqApiKey = config.groqApiKey;
   }
@@ -71,7 +71,7 @@ export class CacheMarket {
   // ── query ────────────────────────────────────────────────
 
   /**
-   * Query the Cachemarket protocol.
+   * Query the Kirkland protocol.
    *
    * Flow:
    * 1. Hash the query and check on-chain cache

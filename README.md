@@ -1,10 +1,10 @@
-# Cachemarket
+# Kirkland
 
 An on-chain data caching protocol built on Monad. The first requester seeds the cache and pays full price; every subsequent requester reads from on-chain storage for ~10x less. No API keys, no subscriptions — just a wallet.
 
 ## Built for Monad Blitz NYC 2026
 
-Cachemarket was built at **Monad Blitz NYC** (June 9, 2026, @ ETHConf), a one-day hackathon by the Monad Foundation challenging developers to ship fast on Monad's high-performance EVM. The idea is simple: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
+Kirkland was built at **Monad Blitz NYC** (June 9, 2026, @ ETHConf), a one-day hackathon by the Monad Foundation challenging developers to ship fast on Monad's high-performance EVM. The idea is simple: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
 
 Highlights:
 1. **Verifiable agent identity** — every gateway request can carry a signed wallet identity that the server verifies before returning data.
@@ -22,7 +22,7 @@ Highlights:
 5. The data lives on-chain for 60 seconds. During that window, every subsequent reader pays 10x less
 6. After the TTL expires, the next requester becomes the new seeder
 
-Optionally, each request can prove **who** is asking by signing `cachemarket-agent:<address>:<timestamp>` with a wallet key and attaching three headers (`X-Agent-Id`, `X-Agent-Sig`, `X-Agent-Ts`). The gateway verifies the signature, stamps the response with `agentVerified: true`, and emits the agent id into the event stream. Missing or invalid signatures fall through anonymously.
+Optionally, each request can prove **who** is asking by signing `kirkland-agent:<address>:<timestamp>` with a wallet key and attaching three headers (`X-Agent-Id`, `X-Agent-Sig`, `X-Agent-Ts`). The gateway verifies the signature, stamps the response with `agentVerified: true`, and emits the agent id into the event stream. Missing or invalid signatures fall through anonymously.
 
 ```
 User / Agent                                            (optional)
@@ -85,16 +85,16 @@ cp .env.example .env
 npm install
 npm run build
 
-cachemarket query "price of ETH"
-cachemarket stats
+kirkland query "price of ETH"
+kirkland stats
 ```
 
 ## Using the SDK
 
 ```typescript
-import { CacheMarket, createAgentHeaders, executeSwap } from "@cachemarket/sdk";
+import { Kirkland, createAgentHeaders, executeSwap } from "@kirkland/sdk";
 
-const client = new CacheMarket({
+const client = new Kirkland({
   privateKey: "0x...",
   rpcUrl: "https://testnet-rpc.monad.xyz",
 });
@@ -149,22 +149,22 @@ Source: [`packages/foundry/contracts/DataCache.sol`](packages/foundry/contracts/
 ## Project structure
 
 ```
-cachemarket/
+kirkland/
 ├── packages/
 │   ├── nextjs/          # Main app (frontend + API routes + gateway logic)
 │   └── foundry/         # Solidity contracts + Foundry tooling
-├── cli/                 # CLI tool — cachemarket query "..."
-├── sdk/                 # TypeScript SDK — @cachemarket/sdk
+├── cli/                 # CLI tool — kirkland query "..."
+├── sdk/                 # TypeScript SDK — @kirkland/sdk
 └── docs/                # Technical references
 ```
 
 > For the full technical reference (component docs, hook internals, navigation logic, state management), see [`docs/TECHNICAL_REFERENCE.md`](docs/TECHNICAL_REFERENCE.md).
 
-## The problem Cachemarket solves
+## The problem Kirkland solves
 
 Every API call today requires authentication, rate limits, and subscriptions. AI agents can't pay for data programmatically. Developers manage dozens of API keys across services. And when two people ask the same question seconds apart, the same data gets fetched twice.
 
-Cachemarket removes all of that. One on-chain contract, one payment rail, zero API keys. The first person to ask pays for fresh data and stores it on Monad. Everyone who asks the same question within 60 seconds reads from on-chain storage at 1/10th the cost. The cache key is a keccak256 hash of the normalized query, so identical questions always resolve to the same entry.
+Kirkland removes all of that. One on-chain contract, one payment rail, zero API keys. The first person to ask pays for fresh data and stores it on Monad. Everyone who asks the same question within 60 seconds reads from on-chain storage at 1/10th the cost. The cache key is a keccak256 hash of the normalized query, so identical questions always resolve to the same entry.
 
 Built on Monad's sub-second finality and sub-cent transaction costs, micropayments are practical for the first time — paying 0.0001 MON per cached read is economically viable because the chain makes it so.
 

@@ -81,7 +81,7 @@ export function useGatewayQuery() {
 
         // ── Step 1: sign agent identity (before payment so the visualizer reads naturally) ──
         const agentTs = Date.now().toString();
-        const agentMessage = `cachemarket-agent:${address}:${agentTs}`;
+        const agentMessage = `kirkland-agent:${address}:${agentTs}`;
         let agentHeaders: AgentHeaders | null = null;
         try {
           const agentSig = await signMessageAsync({ message: agentMessage });

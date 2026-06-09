@@ -1,9 +1,9 @@
 // Main client
-export { CacheMarket } from "./client.js";
+export { Kirkland } from "./client.js";
 
 // Types
 export type {
-  CacheMarketConfig,
+  KirklandConfig,
   QueryResult,
   CacheCheckResult,
   CacheStats,

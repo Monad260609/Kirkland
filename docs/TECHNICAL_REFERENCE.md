@@ -1,4 +1,4 @@
-# Cachemarket — Technical Reference
+# Kirkland — Technical Reference
 
 This file consolidates the original detailed documentation that was previously in README.md.
 
@@ -28,15 +28,15 @@ An on-chain data caching protocol built on Monad Testnet. The first requester se
 
 ## Project Overview
 
-Cachemarket is a monorepo containing:
+Kirkland is a monorepo containing:
 
 | Package | Description |
 |---------|-------------|
 | `packages/nextjs` | Main Next.js 15 frontend + API gateway routes |
 | `packages/foundry` | Solidity smart contracts (DataCache) + Foundry scripts |
 | `backend/` | Standalone Hono.js backend (alternative gateway, port 4402) |
-| `cli/` | CLI tool — `cachemarket query "..."` |
-| `sdk/` | TypeScript SDK — `@cachemarket/sdk` |
+| `cli/` | CLI tool — `kirkland query "..."` |
+| `sdk/` | TypeScript SDK — `@kirkland/sdk` |
 
 The core flow:
 
@@ -105,7 +105,7 @@ Web3 pages show a "Connect Wallet" button in the top-right. Web2 pages and `/abo
 
 #### `/` — Landing page (`app/page.tsx`)
 The main marketing page. Contains:
-- Animated hero with the **Cachemarket** title (click to reset inline section)
+- Animated hero with the **Kirkland** title (click to reset inline section)
 - Three CTA buttons: **How It Works**, **Dev Tools**, **Launch App**
 - **How It Works** and **Dev Tools** toggle inline content panels below the hero (no navigation)
 - **Launch App** links to `/dashboard`
@@ -157,7 +157,7 @@ Standard 404 page.
 
 #### `ScaffoldEthAppWithProviders.tsx`
 **The global app shell.** Wraps all providers (Wagmi, TanStack Query, RainbowKit) and renders the persistent navigation elements:
-- **Back arrow + "CacheMarket" logo** (top-left, hidden on `/` and `/connect`)
+- **Back arrow + "Kirkland" logo** (top-left, hidden on `/` and `/connect`)
   - Logo links to `/` on Web2 pages, `/dashboard` on Web3 pages
 - **Connect Wallet button** (top-right, Web3 pages only)
   - If connected: renders `RainbowKitCustomConnectButton`
@@ -251,10 +251,10 @@ All navigation is managed by `ScaffoldEthAppWithProviders.tsx` (the persistent s
 | Trigger | Behavior |
 |---------|----------|
 | **Back arrow** (top-left) | `router.back()` |
-| **"CacheMarket" logo** | → `/` if on Web2 page, → `/dashboard` if on Web3 |
+| **"Kirkland" logo** | → `/` if on Web2 page, → `/dashboard` if on Web3 |
 | **"About us" button** (bottom-right) | → `/about` |
 | **"Launch App" button** (landing) | → `/dashboard` |
-| **"Cachemarket" title** (landing) | Resets `activeSection` to `null` (shows Live Stats) |
+| **"Kirkland" title** (landing) | Resets `activeSection` to `null` (shows Live Stats) |
 | **"How It Works" button** (landing) | Toggles `activeSection = "how-it-works"` inline |
 | **"Dev Tools" button** (landing) | Toggles `activeSection = "dev-tools"` inline |
 | **"Request API →"** (dashboard) | → `/market/result?cat=...&q=...` |
@@ -362,7 +362,7 @@ Calls `getTransactionReceipt` on Monad. Returns `{ confirmed: true/false }`.
 ## File Structure
 
 ```
-cachemarket/
+kirkland/
 ├── packages/
 │   ├── nextjs/                          # Main app
 │   │   ├── app/
@@ -430,8 +430,8 @@ cachemarket/
 │       ├── events.ts                           # SSE broadcast
 │       ├── middleware/x402.ts                  # x402 payment middleware
 │       └── routes/query.ts                     # /api/query route handler
-├── cli/                                        # cachemarket CLI tool
-├── sdk/                                        # @cachemarket/sdk
+├── cli/                                        # kirkland CLI tool
+├── sdk/                                        # @kirkland/sdk
 └── package.json                               # Monorepo root (npm workspaces)
 ```
 

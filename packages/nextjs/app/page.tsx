@@ -102,7 +102,7 @@ const Home: NextPage = () => {
             onClick={() => setActiveSection(null)}
             className="font-[family-name:var(--font-vt323)] text-6xl md:text-8xl text-white tracking-wider mb-4 cursor-pointer select-none"
           >
-            Cachemarket
+            Kirkland
           </motion.h1>
 
           <motion.p

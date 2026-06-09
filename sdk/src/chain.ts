@@ -143,7 +143,7 @@ export class ChainClient {
   private requireWallet(): { client: WalletClient; account: Account } {
     if (!this.walletClient || !this.account) {
       throw new Error(
-        "privateKey is required to write on-chain. Pass it in CacheMarketConfig.",
+        "privateKey is required to write on-chain. Pass it in KirklandConfig.",
       );
     }
     return { client: this.walletClient, account: this.account };

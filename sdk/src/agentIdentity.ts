@@ -2,9 +2,9 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { Address, Hex } from "viem";
 
 /**
- * Creates agent identity headers for inclusion in Cachemarket API requests.
+ * Creates agent identity headers for inclusion in Kirkland API requests.
  *
- * Signs the message: `cachemarket-agent:<walletAddress>:<timestamp>`
+ * Signs the message: `kirkland-agent:<walletAddress>:<timestamp>`
  *
  * @example
  * const headers = await createAgentHeaders("0xprivatekey...");
@@ -13,7 +13,7 @@ import type { Address, Hex } from "viem";
 export async function createAgentHeaders(privateKey: Hex): Promise<Record<string, string>> {
   const account = privateKeyToAccount(privateKey);
   const timestamp = Date.now().toString();
-  const message = `cachemarket-agent:${account.address}:${timestamp}`;
+  const message = `kirkland-agent:${account.address}:${timestamp}`;
   const signature = await account.signMessage({ message });
 
   return {
