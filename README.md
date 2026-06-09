@@ -2,9 +2,25 @@
 
 An on-chain data caching protocol built on Monad. The first requester seeds the cache and pays full price; every subsequent requester reads from on-chain storage for ~10x less. No API keys, no subscriptions — just a wallet.
 
-## Built for Monad Blitz NYC 2026
+### 🔗 Live demo → **[kirkland-nextjs-iyrp-ten.vercel.app](https://kirkland-nextjs-iyrp-ten.vercel.app)**
 
-Kirkland was built at **Monad Blitz NYC** (June 9, 2026, @ ETHConf), a one-day hackathon by the Monad Foundation challenging developers to ship fast on Monad's high-performance EVM. The idea is simple: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
+*Built on Monad Testnet · Powered by the x402 protocol*
+
+## Built for Monad Blitz NYC
+
+Kirkland was built in one day at **⚡ Monad Blitz NYC** (June 9, 2026 · 9 AM–9 PM), a fast-paced hackathon hosted by the **Monad Foundation** — a focused sprint to experiment with Monad's high-performance EVM and rapidly prototype new ideas. The concept behind Kirkland is simple: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
+
+> *"Monad Blitz is less about delivering a polished, market-ready application in a day, and more about sparking innovation, identifying exciting new use cases for Monad, and giving you a hands-on experience with the future of EVM performance."*
+
+**Event at a glance**
+
+| | |
+|---|---|
+| Event | ⚡ Monad Blitz NYC |
+| Date | June 9, 2026 · 9:00 AM – 9:00 PM |
+| Host | Monad Foundation |
+| Prizes | 🥇 $2,500 · 🥈 $1,500 · 🥉 $1,000 |
+| Faucet · Submissions · Voting | [blitz.devnads.com/events/monad-blitz-nyc](https://blitz.devnads.com/events/monad-blitz-nyc) |
 
 Highlights:
 1. **Verifiable agent identity** — every gateway request can carry a signed wallet identity that the server verifies before returning data.
@@ -182,3 +198,13 @@ Built on Monad's sub-second finality and sub-cent transaction costs, micropaymen
 | **Sofiane Ben Taleb** | Builder | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
 | **Johann Cali** | Builder | [GitHub](https://github.com/JohannCFi) |
 | **Jean Vasseur** | Builder | [GitHub](https://github.com/vassCaR) |
+
+## License
+
+Released under the **MIT License** — see [`LICENCE`](LICENCE). Bootstrapped with [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2) (© BuidlGuidl, MIT).
+
+## Disclaimer
+
+**Kirkland is an independent hackathon project and a parody.** It is **not affiliated with, endorsed by, sponsored by, or associated with Costco Wholesale Corporation, the "Kirkland Signature"™ brand, or any of its products — including its beverages.** "Kirkland Signature" and its logo are trademarks of their respective owners and are used here purely for satirical, non-commercial, and illustrative purposes. No trademark infringement is intended, and no commercial association is implied.
+
+The software is provided "as is", for educational and demonstration purposes only, and runs on a public testnet. It handles no real-world funds and is **not financial advice**. Use at your own risk.
