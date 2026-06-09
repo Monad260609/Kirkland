@@ -6,7 +6,7 @@ An on-chain data caching protocol built on Monad. The first requester seeds the 
 
 Cachemarket was built in one day on February 17, 2026 at **Monad Blitz Denver**, a hackathon challenging developers to build consumer dApps on the Monad blockchain. It finished as a finalist. We wanted to prove a simple idea: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
 
-For **Monad Blitz NYC (June 2026)** the project picks up where Denver left off and adds:
+For **Monad Blitz NYC (June 9, 2026, @ ETHConf)** the project picks up where Denver left off and adds:
 1. **Verifiable agent identity** — every gateway request can carry a signed wallet identity that the server verifies before returning data.
 2. **Uniswap data category** — swap quotes read directly from Uniswap V3 pools on Ethereum mainnet (QuoterV2, no API key), cached on Monad like any other entry.
 3. **AI category** — free-form questions answered by Groq (Llama 3.3 70B) and cached on-chain.
@@ -177,10 +177,12 @@ Built on Monad's sub-second finality and sub-cent transaction costs, micropaymen
 
 ## Team
 
-Built by three students from **DeVinci Blockchain** (Paris, France) at Monad Blitz Denver, February 17, 2026.
+Monad Blitz NYC team (June 9, 2026):
 
 | Name | Role | Links |
 |------|------|-------|
 | **Sofiane Ben Taleb** | Full-Stack & Smart Contracts | [GitHub](https://github.com/gamween) · [LinkedIn](https://www.linkedin.com/in/sofiane-ben-taleb/) |
-| **Armand Sechon** | Backend & Infrastructure | [GitHub](https://github.com/STOOKEEE) · [LinkedIn](https://www.linkedin.com/in/armand-sechon/) |
-| **Noé Wales** | Frontend & Design | [GitHub](https://github.com/CHAAIISE) · [LinkedIn](https://www.linkedin.com/in/no%C3%A9-w/) |
+| **Johann** | — | — |
+| **Jean** | — | — |
+
+Original protocol built at **Monad Blitz Denver** (February 17, 2026) by Sofiane Ben Taleb, Armand Sechon and Noé Wales — DeVinci Blockchain, Paris.
