@@ -9,8 +9,36 @@ const TOKEN_MAP: Record<string, string> = {
   mon: "monad",
 };
 
-export function detectIntent(input: string): { type: "price" | "weather" | "country"; param: string } {
+// Tokens we know how to quote on Uniswap (Ethereum mainnet pools).
+const UNISWAP_TOKENS = ["eth", "weth", "usdc", "usdt", "dai", "wbtc", "uni", "link"];
+
+export type IntentType = "price" | "weather" | "country" | "swap-quote";
+
+export interface Intent {
+  type: IntentType;
+  param: string;
+}
+
+export function detectIntent(input: string): Intent {
   const lower = input.toLowerCase().trim();
+  const tokens = UNISWAP_TOKENS.join("|");
+
+  // Swap-quote detection: "swap 1 eth to usdc", "quote 0.5 eth for usdc", "1 eth in usdc"
+  const swapWithAmount =
+    lower.match(
+      new RegExp(`(?:swap|quote|trade)\\s+(\\d+\\.?\\d*)\\s*(${tokens})\\s+(?:to|for|in|->)\\s+(${tokens})`),
+    ) || lower.match(new RegExp(`(\\d+\\.?\\d*)\\s*(${tokens})\\s+(?:in|to|->)\\s+(${tokens})`));
+  if (swapWithAmount) {
+    return { type: "swap-quote", param: `${swapWithAmount[1]}:${swapWithAmount[2]}:${swapWithAmount[3]}` };
+  }
+
+  // Swap-quote without explicit amount: "quote eth usdc", "swap eth for usdc", "eth -> usdc quote"
+  const swapNoAmount =
+    lower.match(new RegExp(`(?:quote|swap)\\s+(${tokens})\\s+(?:to|for|in|->|/|\\s+)\\s*(${tokens})`)) ||
+    lower.match(new RegExp(`(${tokens})\\s*(?:->|→)\\s*(${tokens})`));
+  if (swapNoAmount) {
+    return { type: "swap-quote", param: `1:${swapNoAmount[1]}:${swapNoAmount[2]}` };
+  }
 
   // Price detection: "ETH price", "price of bitcoin", "bitcoin", "BTC"
   const priceMatch = lower.match(

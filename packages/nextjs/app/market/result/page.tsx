@@ -21,6 +21,7 @@ import { addCallEntry } from "~~/utils/gateway/callHistory";
 
 function buildQuery(cat: string, q: string): string {
   if (cat === "crypto") return `${q} price`;
+  // swap/weather/countries options already contain the full query verbatim
   return q;
 }
 
@@ -226,6 +227,7 @@ export default function MarketResultPage() {
             {category === "crypto" && <CryptoResult data={result.data} token={query} />}
             {category === "weather" && <WeatherResult data={result.data} />}
             {category === "countries" && <CountriesResult data={result.data} />}
+            {category === "swap" && <SwapQuoteResult data={result.data} />}
           </motion.div>
         )}
       </div>
@@ -360,6 +362,93 @@ function CountriesResult({ data }: { data: Record<string, unknown> }) {
       </div>
     </div>
   );
+}
+
+/* ── Uniswap swap quote ── */
+function SwapQuoteResult({ data }: { data: Record<string, unknown> }) {
+  if (typeof data.error === "string") {
+    return (
+      <div className="rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-md p-6 text-red-300">
+        {data.error}
+      </div>
+    );
+  }
+
+  const tokenIn = String(data.tokenIn ?? "?");
+  const tokenOut = String(data.tokenOut ?? "?");
+  const amountIn = String(data.amountIn ?? "—");
+  const amountOut = String(data.amountOut ?? "—");
+  const rate = String(data.rate ?? "—");
+  const route = String(data.route ?? `${tokenIn} → ${tokenOut}`);
+  const gas = typeof data.estimatedGasUSD === "string" ? data.estimatedGasUSD : null;
+
+  return (
+    <div className="space-y-4">
+      {/* headline pair card */}
+      <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 flex flex-wrap items-baseline gap-3">
+        <span className="text-3xl text-white font-bold">{amountIn}</span>
+        <span className="text-3xl text-white/60 font-semibold">{tokenIn}</span>
+        <span className="text-white/40 text-2xl">→</span>
+        <span className="text-3xl text-white font-bold">
+          {Number(amountOut).toLocaleString(undefined, { maximumFractionDigits: 6 })}
+        </span>
+        <span className="text-3xl text-white/60 font-semibold">{tokenOut}</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+          <p className="text-white/50 text-sm mb-1">Rate</p>
+          <p className="text-white text-2xl font-bold">
+            1 {tokenIn} = {rate} {tokenOut}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+          <p className="text-white/50 text-sm mb-1">Route</p>
+          <p className="text-white text-lg font-mono">{route}</p>
+        </div>
+        <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6">
+          <p className="text-white/50 text-sm mb-1">Est. gas</p>
+          <p className="text-white text-lg font-mono">{gas ? `$${gas}` : "—"}</p>
+        </div>
+      </div>
+
+      <a
+        href={buildUniswapDeepLink(tokenIn, tokenOut, amountIn)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block w-full text-center px-6 py-3 rounded-2xl bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 text-pink-200 hover:text-white font-semibold transition-all"
+      >
+        Execute this swap on Uniswap →
+      </a>
+
+      <p className="text-white/40 text-xs text-center">
+        Quote sourced from Uniswap on Ethereum mainnet · cached on Monad for 60s
+      </p>
+    </div>
+  );
+}
+
+const UNISWAP_TOKEN_ADDRESSES: Record<string, string> = {
+  ETH: "ETH",
+  WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+  DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+  WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  UNI: "0x1f9840a85d5aF5bf1D1762F925BdAddC4201F984",
+  LINK: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+};
+
+function buildUniswapDeepLink(tokenIn: string, tokenOut: string, amountIn: string): string {
+  const inAddr = UNISWAP_TOKEN_ADDRESSES[tokenIn.toUpperCase()] ?? tokenIn;
+  const outAddr = UNISWAP_TOKEN_ADDRESSES[tokenOut.toUpperCase()] ?? tokenOut;
+  const params = new URLSearchParams({
+    inputCurrency: inAddr,
+    outputCurrency: outAddr,
+    exactAmount: amountIn,
+    exactField: "input",
+  });
+  return `https://app.uniswap.org/#/swap?${params.toString()}`;
 }
 
 /* ── Fallback: raw JSON display ── */

@@ -63,6 +63,23 @@ export async function fetchCountry(country: string): Promise<string> {
   });
 }
 
+/// Fetch a Uniswap quote (Ethereum mainnet pools, cached on Monad).
+/// param shape: "<amountIn>:<tokenIn>:<tokenOut>" e.g. "1:eth:usdc"
+export async function fetchSwapQuote(param: string): Promise<string> {
+  const [amount, tokenIn, tokenOut] = param.split(":");
+  if (!tokenIn || !tokenOut) {
+    return JSON.stringify({ error: `Invalid swap param: ${param}` });
+  }
+  const { fetchUniswapQuote } = await import("./uniswap");
+  try {
+    const quote = await fetchUniswapQuote(tokenIn, tokenOut, amount || "1");
+    return JSON.stringify(quote);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return JSON.stringify({ error: message });
+  }
+}
+
 /// Route to the right fetcher based on intent type
 export async function fetchFromSource(type: string, param: string): Promise<string> {
   switch (type) {
@@ -72,6 +89,8 @@ export async function fetchFromSource(type: string, param: string): Promise<stri
       return fetchWeather(param);
     case "country":
       return fetchCountry(param);
+    case "swap-quote":
+      return fetchSwapQuote(param);
     default:
       return JSON.stringify({ error: "Unknown query type" });
   }

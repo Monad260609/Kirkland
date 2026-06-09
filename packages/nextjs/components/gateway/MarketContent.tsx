@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconChevronDown, IconCloud, IconCoin, IconWorld } from "@tabler/icons-react";
+import { IconArrowsExchange, IconChevronDown, IconCloud, IconCoin, IconWorld } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { HoverEffect } from "~~/components/ui/card-hover-effect";
 
@@ -37,6 +37,19 @@ const CATEGORIES: CategoryData[] = [
     icon: <IconWorld className="h-6 w-6" />,
     options: ["France info", "Japan country", "Brazil population", "USA details", "Germany info"],
     catKey: "countries",
+  },
+  {
+    title: "Uniswap Quotes (Ethereum)",
+    description: "Live swap quotes from Uniswap, cached on Monad",
+    icon: <IconArrowsExchange className="h-6 w-6" />,
+    options: [
+      "quote 1 eth to usdc",
+      "quote 1 eth to dai",
+      "quote 1 wbtc to usdc",
+      "quote 100 usdc to eth",
+      "quote 1 link to eth",
+    ],
+    catKey: "swap",
   },
 ];
 
