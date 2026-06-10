@@ -2,25 +2,14 @@
 
 An on-chain data caching protocol built on Monad. The first requester seeds the cache and pays full price; every subsequent requester reads from on-chain storage for ~10x less. No API keys, no subscriptions — just a wallet.
 
-### 🔗 Live demo → **[kirkland-nextjs-iyrp-ten.vercel.app](https://kirkland-nextjs-iyrp-ten.vercel.app)**
+## Links
 
-*Built on Monad Testnet · Powered by the x402 protocol*
+- **Live app**: https://kirkland-nextjs-iyrp-ten.vercel.app
+- **GitHub**: https://github.com/Monad260609/Kirkland
 
 ## Built for Monad Blitz NYC
 
-Kirkland was built in one day at **⚡ Monad Blitz NYC** (June 9, 2026 · 9 AM–9 PM), a fast-paced hackathon hosted by the **Monad Foundation** — a focused sprint to experiment with Monad's high-performance EVM and rapidly prototype new ideas. The concept behind Kirkland is simple: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
-
-> *"Monad Blitz is less about delivering a polished, market-ready application in a day, and more about sparking innovation, identifying exciting new use cases for Monad, and giving you a hands-on experience with the future of EVM performance."*
-
-**Event at a glance**
-
-| | |
-|---|---|
-| Event | ⚡ Monad Blitz NYC |
-| Date | June 9, 2026 · 9:00 AM – 9:00 PM |
-| Host | Monad Foundation |
-| Prizes | 🥇 $2,500 · 🥈 $1,500 · 🥉 $1,000 |
-| Faucet · Submissions · Voting | [blitz.devnads.com/events/monad-blitz-nyc](https://blitz.devnads.com/events/monad-blitz-nyc) |
+Kirkland was built in a single day at [Monad Blitz NYC](https://blitz.devnads.com/events/monad-blitz-nyc) (June 9, 2026), a one-day hackathon hosted by the Monad Foundation with a 5,000 USD prize pool. Monad Blitz is a fast-paced sprint designed to push developers to experiment with Monad's high-performance EVM and rapidly prototype new ideas, less about shipping a polished product than about sparking new use cases for the chain. The concept behind Kirkland is simple: what if paying for data was built directly into HTTP, and the first person to ask a question could subsidize everyone who asks after them?
 
 Highlights:
 1. **Verifiable agent identity** — every gateway request can carry a signed wallet identity that the server verifies before returning data.
